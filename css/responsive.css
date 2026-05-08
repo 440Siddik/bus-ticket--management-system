@@ -1,0 +1,47 @@
+/* ==============================
+   Fully Responsive Overrides 
+============================== */
+
+/* Tablet & Smaller (Max: 768px) */
+@media (max-width: 768px) {
+    .amount-area { padding: 15px !important; }
+    
+    /* Seat Grid Adjustments */
+    .seat-group { gap: 10px !important; }
+    .seat-btn { 
+        width: 55px; /* Scaled down from 80px */
+        padding: 8px; 
+        font-size: 14px; 
+    }
+    
+    .banner-card { display: none !important; }
+    .dashed-line { display: none; }
+}
+
+/* Mobile Devices (Max: 480px) */
+@media (max-width: 480px) {
+    /* Compress Seats Further */
+    .seat-btn { 
+        width: 42px; 
+        padding: 5px; 
+        font-size: 12px; 
+    }
+    .seat-num { margin-right: 8px !important; }
+    
+    /* Coupon Adjustments */
+    .cupon-first { 
+        min-height: auto; 
+        padding: 20px !important; 
+        flex-direction: column;
+        text-align: center;
+        gap: 15px;
+    }
+    .cupon-first img { display: none !important; }
+    
+    /* Typography Scaling */
+    .display-5 { font-size: 2rem !important; }
+    .display-6 { font-size: 1.5rem !important; }
+    
+    .apply-btn { padding: 10px 15px; width: 100%; margin-top: 10px; }
+    #couponSection { flex-direction: column; gap: 10px; }
+}

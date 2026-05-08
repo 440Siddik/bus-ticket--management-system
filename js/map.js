@@ -1,0 +1,114 @@
+const mapContainer = document.getElementById('routeMap');
+let map;
+let routingControl;
+
+window.initializeMap = function() {
+    if (!map && mapContainer) {
+        map = L.map('routeMap').setView([23.8103, 90.4125], 7);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+        
+        setTimeout(() => { map.invalidateSize(); }, 100);
+        setTimeout(() => { map.invalidateSize(); }, 500);
+    }
+}
+
+// Elite Feature: Fetches live 100% free weather data for the exact Lat/Lng of the destination
+async function fetchLiveWeather(lat, lon, destinationName) {
+    try {
+        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
+        const data = await res.json();
+        const temp = data.current_weather.temperature;
+        const wind = data.current_weather.windspeed;
+        
+        const weatherEl = document.getElementById('weather-info');
+        if (weatherEl) {
+            weatherEl.classList.remove('d-none');
+            // Update the UI with real-time temperature
+            weatherEl.innerHTML = `🌤️ Current Weather in ${destinationName}: <strong>${temp}°C</strong> | Wind: ${wind} km/h`;
+        }
+    } catch (error) {
+        console.error("Weather fetch failed, failing gracefully.", error);
+    }
+}
+
+window.updateRoute = async function(startLocation, endLocation) {
+    if (!map) window.initializeMap();
+
+    try {
+        const startRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${startLocation},+Bangladesh`);
+        const startData = await startRes.json();
+        
+        const endRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${endLocation},+Bangladesh`);
+        const endData = await endRes.json();
+
+        if (startData.length > 0 && endData.length > 0) {
+            const startCoord = L.latLng(startData[0].lat, startData[0].lon);
+            const endCoord = L.latLng(endData[0].lat, endData[0].lon);
+            
+            // Trigger weather fetch immediately in the background
+            fetchLiveWeather(endData[0].lat, endData[0].lon, endLocation);
+
+            if (routingControl) {
+                map.removeControl(routingControl);
+            }
+
+            routingControl = L.Routing.control({
+                waypoints: [startCoord, endCoord],
+                routeWhileDragging: false,
+                addWaypoints: false,
+                showAlternatives: true,
+                show: false, 
+                lineOptions: {
+                    styles: [
+                        {color: 'black', opacity: 0.15, weight: 9},
+                        {color: 'white', opacity: 0.8, weight: 6},
+                        {color: '#1dd100', opacity: 1, weight: 4} 
+                    ]
+                },
+                altLineOptions: {
+                    styles: [
+                        {color: 'black', opacity: 0.15, weight: 9},
+                        {color: 'white', opacity: 0.8, weight: 6},
+                        {color: '#a0a0a0', opacity: 1, weight: 3} 
+                    ]
+                },
+                createMarker: function(i, wp, nWps) {
+                    const dotColor = i === 0 ? '#1dd100' : '#ff4d4d';
+                    return L.marker(wp.latLng, {
+                        icon: L.divIcon({
+                            className: 'custom-map-marker',
+                            html: `<div style="background-color: ${dotColor}; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 6px rgba(0,0,0,0.5);"></div>`,
+                            iconSize: [16, 16],
+                            iconAnchor: [8, 8]
+                        })
+                    });
+                }
+            }).addTo(map);
+
+            routingControl.on('routesfound', function(e) {
+                const summary = e.routes[0].summary;
+                
+                const distanceEl = document.getElementById("display-distance");
+                if (distanceEl) distanceEl.innerText = (summary.totalDistance / 1000).toFixed(1);
+                
+                const durationEl = document.getElementById("display-duration");
+                if (durationEl) {
+                    const hrs = Math.floor(summary.totalTime / 3600);
+                    const mins = Math.round((summary.totalTime % 3600) / 60);
+                    durationEl.innerText = hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`;
+                }
+            });
+            
+            const group = new L.featureGroup([L.marker(startCoord), L.marker(endCoord)]);
+            map.fitBounds(group.getBounds(), {padding: [50, 50]});
+        }
+    } catch (error) {
+        console.error("Routing error:", error);
+    }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    setTimeout(() => { window.initializeMap(); }, 300);
+});

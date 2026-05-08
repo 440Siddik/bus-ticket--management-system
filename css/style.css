@@ -1,0 +1,321 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Raleway:wght@100..900&family=Roboto:wght@100..900&display=swap");
+
+:root {
+  --primary-green: #1dd100;
+  --dark-main: #030712;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+.main-container {
+  max-width: 1170px !important;
+  margin: auto !important;
+  padding: 10px;
+}
+.font-raleway {
+  font-family: "Raleway", sans-serif;
+}
+.font-inter {
+  font-family: "Inter", sans-serif;
+}
+.font-roboto {
+  font-family: "Roboto", sans-serif;
+}
+
+.text-primary-green {
+  color: var(--primary-green) !important;
+}
+.bg-primary-green {
+  background-color: var(--primary-green) !important;
+  color: white;
+}
+.bg-primary-light {
+  background-color: rgba(29, 209, 0, 0.1);
+}
+.text-dark-main {
+  color: var(--dark-main);
+}
+.text-dark-muted {
+  color: rgba(3, 7, 18, 0.7);
+}
+.text-dark-light {
+  color: rgba(3, 7, 18, 0.5);
+}
+.bg-light-gray {
+  background-color: #f7f8f8;
+}
+.bg-footer {
+  background-color: #030712;
+}
+
+.rounded-12 {
+  border-radius: 12px;
+}
+.rounded-8 {
+  border-radius: 8px;
+}
+.border-dashed-custom {
+  border-right: 2px dashed rgba(3, 7, 18, 0.3);
+}
+.divider-dashed {
+  border-bottom: 1px dashed rgba(3, 7, 18, 0.2);
+}
+
+.cupon-first {
+  width: 100%;
+  min-height: 220px;
+  border-radius: 24px;
+  background-color: #ffbf0f;
+}
+.cupon-second {
+  background-color: #f78c9c;
+}
+
+.coupon-input {
+  border: none;
+  outline: none;
+  width: 100%;
+  background: transparent;
+}
+.apply-btn {
+  background-color: var(--primary-green);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 20px;
+  font-weight: 600;
+  transition: 0.3s;
+}
+.apply-btn:hover {
+  background-color: #18b300;
+}
+
+.seat-btn {
+  width: 80px;
+  background-color: #f7f8f8;
+  border: none;
+  border-radius: 8px;
+  padding: 10px;
+  color: rgba(3, 7, 18, 0.5);
+  font-weight: 500;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.next-btn {
+  background-color: var(--primary-green);
+  color: #fff;
+  font-weight: 700;
+  border-radius: 12px;
+  padding: 15px;
+  width: 100%;
+  border: none;
+  transition: 0.3s;
+}
+.next-btn:hover:not(:disabled) {
+  background-color: #18b300;
+  color: #fff;
+}
+.next-btn:disabled {
+  background-color: #b5b5b5;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+.re-from {
+  width: 100%;
+  padding: 15px;
+  border: 1px solid rgba(3, 7, 18, 0.1);
+  border-radius: 12px;
+  outline: none;
+  margin-bottom: 20px;
+  transition: border-color 0.3s;
+}
+
+.bnr-card {
+  border-bottom: 3px solid rgb(29, 209, 0);
+}
+
+/* Custom Select Dropdowns */
+.custom-select {
+  border: 1px solid rgba(3, 7, 18, 0.1);
+  border-radius: 8px;
+  padding: 10px 15px;
+  cursor: pointer;
+  background-color: white;
+}
+.custom-select:focus {
+  border-color: #1dd100;
+  box-shadow: 0 0 0 0.2rem rgba(29, 209, 0, 0.25);
+}
+
+/* Overriding Bootstrap focus */
+.btn:focus,
+.form-control:focus,
+input:focus,
+select:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 0.25rem rgba(29, 209, 0, 0.25) !important;
+  border-color: #1dd100 !important;
+}
+
+/* UI/UX Animations */
+.glass-nav {
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+.transition-all {
+  transition: all 0.3s ease;
+}
+.hover-lift {
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+}
+.hover-lift-subtle {
+  transition: transform 0.2s ease;
+}
+.hover-lift-subtle:hover {
+  transform: translateY(-2px);
+}
+.hover-primary {
+  transition: color 0.2s;
+}
+.hover-primary:hover {
+  color: var(--primary-green) !important;
+}
+.hover-primary-btn:hover {
+  background-color: var(--primary-green) !important;
+  color: white !important;
+}
+.text-shadow {
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+@keyframes pulseSoft {
+  0% {
+    box-shadow: 0 0 0 0 rgba(29, 209, 0, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(29, 209, 0, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(29, 209, 0, 0);
+  }
+}
+.pulse-soft {
+  animation: pulseSoft 2s infinite;
+}
+
+.seat-btn:hover:not(:disabled) {
+  background-color: #e2e3e3;
+  transform: scale(1.05);
+}
+.seatColor {
+  background-color: var(--primary-green) !important;
+  color: #ffffff !important;
+  transform: scale(1.1);
+  box-shadow: 0 5px 15px rgba(29, 209, 0, 0.4);
+  animation: seatPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes seatPop {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1.1);
+  }
+}
+.seatClass {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: all 0.8s cubic-bezier(0.5, 0, 0, 1);
+}
+.reveal.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Pop animation for the nav badge */
+.animation-pop {
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+@keyframes popIn {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* Search Modal Styling */
+#search-results-list li {
+  padding: 12px 15px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+#search-results-list li:hover {
+  background-color: rgba(29, 209, 0, 0.1);
+}
+#search-results-list li .badge {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Invoice Visual Cutouts */
+.ticket-invoice-card {
+  z-index: 1;
+}
+.invoice-cutout-left,
+.invoice-cutout-right {
+  width: 30px;
+  height: 30px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  border: 2px dashed rgba(3, 7, 18, 0.25);
+}
+.invoice-cutout-left {
+  left: -15px;
+  border-right: none;
+  border-top: none;
+  border-bottom: none;
+}
+.invoice-cutout-right {
+  right: -15px;
+  border-left: none;
+  border-top: none;
+  border-bottom: none;
+}
