@@ -4,18 +4,27 @@ let routingControl;
 
 window.initializeMap = function() {
     if (!map && mapContainer) {
-        map = L.map('routeMap').setView([23.8103, 90.4125], 7);
+        mapContainer.style.display = "block";
+        
+        map = L.map('routeMap', {
+            scrollWheelZoom: false,
+            dragging: !L.Browser.mobile,
+            tap: !L.Browser.mobile
+        }).setView([23.8103, 90.4125], 7);
+
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
+        
+        map.on('focus', () => { map.scrollWheelZoom.enable(); });
+        map.on('blur', () => { map.scrollWheelZoom.disable(); });
         
         setTimeout(() => { map.invalidateSize(); }, 100);
         setTimeout(() => { map.invalidateSize(); }, 500);
     }
 }
 
-// Elite Feature: Fetches live 100% free weather data for the exact Lat/Lng of the destination
-async function fetchLiveWeather(lat, lon, destinationName) {
+window.fetchLiveWeather = async function(lat, lon, destinationName) {
     try {
         const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
         const data = await res.json();
@@ -25,7 +34,6 @@ async function fetchLiveWeather(lat, lon, destinationName) {
         const weatherEl = document.getElementById('weather-info');
         if (weatherEl) {
             weatherEl.classList.remove('d-none');
-            // Update the UI with real-time temperature
             weatherEl.innerHTML = `🌤️ Current Weather in ${destinationName}: <strong>${temp}°C</strong> | Wind: ${wind} km/h`;
         }
     } catch (error) {
@@ -37,18 +45,20 @@ window.updateRoute = async function(startLocation, endLocation) {
     if (!map) window.initializeMap();
 
     try {
-        const startRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${startLocation},+Bangladesh`);
+        const safeStart = encodeURIComponent(startLocation + ", Bangladesh");
+        const safeEnd = encodeURIComponent(endLocation + ", Bangladesh");
+
+        const startRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${safeStart}`);
         const startData = await startRes.json();
         
-        const endRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${endLocation},+Bangladesh`);
+        const endRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${safeEnd}`);
         const endData = await endRes.json();
 
         if (startData.length > 0 && endData.length > 0) {
             const startCoord = L.latLng(startData[0].lat, startData[0].lon);
             const endCoord = L.latLng(endData[0].lat, endData[0].lon);
             
-            // Trigger weather fetch immediately in the background
-            fetchLiveWeather(endData[0].lat, endData[0].lon, endLocation);
+            window.fetchLiveWeather(endData[0].lat, endData[0].lon, endLocation);
 
             if (routingControl) {
                 map.removeControl(routingControl);
@@ -59,19 +69,19 @@ window.updateRoute = async function(startLocation, endLocation) {
                 routeWhileDragging: false,
                 addWaypoints: false,
                 showAlternatives: true,
-                show: false, 
+                show: false,
                 lineOptions: {
                     styles: [
                         {color: 'black', opacity: 0.15, weight: 9},
                         {color: 'white', opacity: 0.8, weight: 6},
-                        {color: '#1dd100', opacity: 1, weight: 4} 
+                        {color: '#1dd100', opacity: 1, weight: 4}
                     ]
                 },
                 altLineOptions: {
                     styles: [
                         {color: 'black', opacity: 0.15, weight: 9},
                         {color: 'white', opacity: 0.8, weight: 6},
-                        {color: '#a0a0a0', opacity: 1, weight: 3} 
+                        {color: '#a0a0a0', opacity: 1, weight: 3}
                     ]
                 },
                 createMarker: function(i, wp, nWps) {
@@ -108,7 +118,3 @@ window.updateRoute = async function(startLocation, endLocation) {
         console.error("Routing error:", error);
     }
 }
-
-document.addEventListener("DOMContentLoaded", () => {
-    setTimeout(() => { window.initializeMap(); }, 300);
-});

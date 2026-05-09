@@ -1,6 +1,7 @@
 const firebaseConfig = {
     apiKey: "AIzaSyByMRQ3cCYQX60D-UXzBnD7cbn-hiDQMhc",
     authDomain: "bus-ticket--management-system.firebaseapp.com",
+    databaseURL: "https://bus-ticket--management-system-default-rtdb.asia-southeast1.firebasedatabase.app",
     projectId: "bus-ticket--management-system",
     storageBucket: "bus-ticket--management-system.firebasestorage.app",
     messagingSenderId: "570359874016",
@@ -11,7 +12,8 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const googleProvider = new firebase.auth.GoogleAuthProvider();
 
-let isLoginMode = true;
+let isLoginMode = false; 
+window.isUserLoggedIn = false; 
 
 const authForm = document.getElementById("authForm");
 const authEmail = document.getElementById("authEmail");
@@ -49,7 +51,6 @@ authForm.addEventListener("submit", (e) => {
     if (isLoginMode) {
         auth.signInWithEmailAndPassword(email, password)
             .then(() => {
-                bootstrap.Modal.getInstance(document.getElementById('authModal')).hide();
                 authForm.reset();
                 if(window.showToast) window.showToast("Logged in successfully!");
             })
@@ -63,10 +64,8 @@ authForm.addEventListener("submit", (e) => {
     } else {
         auth.createUserWithEmailAndPassword(email, password)
             .then(() => {
-                bootstrap.Modal.getInstance(document.getElementById('authModal')).hide();
                 authForm.reset();
-                alert("SUCCESS! Your new account has been created and you are now logged in.");
-                if(window.showToast) window.showToast("Registered successfully!");
+                if(window.showToast) window.showToast("Registered successfully! Welcome to NexTrip.");
             })
             .catch((error) => {
                 if(window.showToast) window.showToast(error.message.replace("Firebase: ", ""), true);
@@ -82,9 +81,8 @@ if (googleAuthBtn) {
     googleAuthBtn.addEventListener("click", () => {
         auth.signInWithPopup(googleProvider)
             .then((result) => {
-                bootstrap.Modal.getInstance(document.getElementById('authModal')).hide();
                 if(result.additionalUserInfo && result.additionalUserInfo.isNewUser) {
-                     alert(`Welcome to NexTrip, ${result.user.displayName}! Your account is set up.`);
+                     if(window.showToast) window.showToast(`Welcome to NexTrip, ${result.user.displayName}! Your account is set up.`);
                 } else {
                      if(window.showToast) window.showToast(`Welcome back, ${result.user.displayName || ''}!`);
                 }
@@ -99,12 +97,10 @@ if (forgotPasswordBtn) {
     forgotPasswordBtn.addEventListener("click", (e) => {
         e.preventDefault();
         const email = authEmail.value;
-        
         if(!email) {
             alert("Please type your email into the Email field first, then click 'Forgot Password?'");
             return;
         }
-        
         auth.sendPasswordResetEmail(email)
             .then(() => {
                 alert("A password reset link has been sent to your email. Please check your inbox.");
@@ -116,24 +112,51 @@ if (forgotPasswordBtn) {
 }
 
 auth.onAuthStateChanged((user) => {
+    window.isUserLoggedIn = !!user;
+    
+    const contentWrapper = document.getElementById("content-wrapper");
+    const authModalEl = document.getElementById("authModal");
+    const authModalInstance = bootstrap.Modal.getOrCreateInstance(authModalEl);
+
     if (user) {
+        if (contentWrapper) {
+            contentWrapper.style.filter = "none";
+            contentWrapper.style.pointerEvents = "auto";
+            contentWrapper.style.userSelect = "auto";
+        }
+        
+        authModalInstance.hide();
+        
+        document.body.style.cssText = ''; 
+        document.documentElement.style.cssText = '';
+        document.body.classList.remove("modal-open");
+        
+        setTimeout(() => {
+            document.body.style.cssText = ''; 
+            document.documentElement.style.cssText = '';
+            document.body.classList.remove("modal-open");
+            document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+        }, 500); 
+
         navAuthBtn.innerText = "Logout";
         navAuthBtn.classList.replace("btn-outline-success", "btn-danger");
-        
-        // CRITICAL FIX: Reload the page instantly upon clicking Logout
+        navAuthBtn.style.display = "block";
         navAuthBtn.onclick = () => {
-            auth.signOut().then(() => {
-                window.location.reload(); 
-            });
+            auth.signOut().then(() => { window.location.reload(); });
         };
         
-        navAuthBtn.removeAttribute("data-bs-toggle");
-        navAuthBtn.removeAttribute("data-bs-target");
     } else {
-        navAuthBtn.innerText = "Login";
-        navAuthBtn.classList.replace("btn-danger", "btn-outline-success");
-        navAuthBtn.onclick = null;
-        navAuthBtn.setAttribute("data-bs-toggle", "modal");
-        navAuthBtn.setAttribute("data-bs-target", "#authModal");
+        window.scrollTo(0, 0);
+        document.body.style.overflow = "hidden";
+        document.documentElement.style.overflow = "hidden";
+        
+        if (contentWrapper) {
+            contentWrapper.style.filter = "blur(12px)";
+            contentWrapper.style.pointerEvents = "none";
+            contentWrapper.style.userSelect = "none";
+        }
+        
+        navAuthBtn.style.display = "none";
+        authModalInstance.show();
     }
 });
