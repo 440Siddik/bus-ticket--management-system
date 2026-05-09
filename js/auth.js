@@ -127,10 +127,12 @@ auth.onAuthStateChanged((user) => {
         
         authModalInstance.hide();
         
+        // INSTANT SCROLL RESTORE
         document.body.style.cssText = ''; 
         document.documentElement.style.cssText = '';
         document.body.classList.remove("modal-open");
         
+        // NUCLEAR BACKUP SCROLL RESTORE (Kills Bootstrap's lingering locks)
         setTimeout(() => {
             document.body.style.cssText = ''; 
             document.documentElement.style.cssText = '';
@@ -139,7 +141,8 @@ auth.onAuthStateChanged((user) => {
         }, 500); 
 
         navAuthBtn.innerText = "Logout";
-        navAuthBtn.classList.replace("btn-outline-success", "btn-danger");
+        navAuthBtn.classList.remove("btn-outline-success");
+        navAuthBtn.classList.add("btn-custom-logout"); // FIX: Custom elegant matte red class
         navAuthBtn.style.display = "block";
         navAuthBtn.onclick = () => {
             auth.signOut().then(() => { window.location.reload(); });

@@ -13,25 +13,33 @@ const API = {
         Mymensingh: ["Jamalpur", "Mymensingh", "Netrokona", "Sherpur"]
     },
     multipliers: { Regular: 1.0, AC: 1.5, Luxury: 2.2, Sleeper: 3.0 },
-    coupons: { "NEW15": 0.15, "Couple 20": 0.20 }
+    coupons: { "EID2026": 0.20 } 
 };
+
+function getLocalDateString(offsetDays = 0) {
+    const d = new Date();
+    d.setDate(d.getDate() + offsetDays);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
 
 const state = {
     isValid: false,
     pricePerSeat: 0,
     selectedSeats: [], 
-    discountAmt: 0,
+    bookingHistory: [], 
+    appliedCoupon: null, 
     maxSeats: 4,
     get total() { return this.selectedSeats.length * this.pricePerSeat; },
+    get discountAmt() { return this.appliedCoupon ? this.total * API.coupons[this.appliedCoupon] : 0; },
     get grandTotal() { return this.total - this.discountAmt; }
 };
 
 const mySessionId = Date.now().toString(36) + Math.random().toString(36).substring(2);
 const lockTimers = {}; 
 
-// ==========================================
-// 2. DOM ELEMENTS (The "Senses")
-// ==========================================
 const $ = id => document.getElementById(id);
 
 const els = {
@@ -44,15 +52,15 @@ const els = {
     searchInput: $("global-search-input"), searchResults: $("search-results-list")
 };
 
-// ==========================================
-// 3. CORE LOGIC & UI RENDERING (The "Hands")
-// ==========================================
 function init() {
+    if(!els.origDiv) return; 
     Object.keys(API.divisions).sort().forEach(div => {
         els.origDiv.innerHTML += `<option value="${div}">${div}</option>`;
         els.destDiv.innerHTML += `<option value="${div}">${div}</option>`;
     });
-    els.date.min = new Date().toISOString().split("T")[0];
+    
+    els.date.min = getLocalDateString(0);
+    els.date.max = getLocalDateString(10);
     
     els.seats.forEach(seat => {
         const id = seat.innerText.trim();
@@ -63,53 +71,120 @@ function init() {
     });
 
     if (window.initializeMap) window.initializeMap();
-    initFirebaseRealtimeSeats();
 }
 
 let dbSeatsRef;
-function initFirebaseRealtimeSeats() {
+
+function listenToRouteSeats() {
+    const orig = els.origDist.value;
+    const dest = els.destDist.value;
+    const date = els.date.value;
+    const time = els.time.value;
+    
+    if (!orig || !dest || !date || !time) return; 
+    
+    const pathKey = encodeURIComponent(`${orig}_${dest}_${date}_${time}`).replace(/\./g, '%2E');
+    
     try {
         if (typeof firebase !== 'undefined' && firebase.database) {
             const db = firebase.database();
-            dbSeatsRef = db.ref('bus_009/seats');
-
+            if (dbSeatsRef) dbSeatsRef.off(); 
+            
+            dbSeatsRef = db.ref(`journeys/${pathKey}/seats`);
+            
+            els.seats.forEach(btn => {
+                btn.classList.remove('bg-danger', 'text-white', 'bg-secondary', 'pe-none', 'seatColor', 'booked-seat');
+                btn.removeAttribute('title');
+            });
+            
             dbSeatsRef.on('value', (snapshot) => {
                 const seatsData = snapshot.val() || {};
                 const now = Date.now();
+                let bookedOrLockedCount = 0; 
                 
                 els.seats.forEach(btn => {
                     const seatId = btn.innerText.trim();
                     const seatInfo = seatsData[seatId];
                     
-                    btn.classList.remove('bg-danger', 'text-white', 'bg-secondary', 'pe-none');
-                    btn.style.opacity = "1";
+                    btn.classList.remove('bg-danger', 'text-white', 'bg-secondary', 'pe-none', 'booked-seat');
                     btn.removeAttribute('title');
                     
                     if (seatInfo) {
                         if (seatInfo.status === 'booked') {
-                            btn.classList.add('bg-secondary', 'text-white', 'pe-none');
-                            btn.style.opacity = "0.5";
+                            bookedOrLockedCount++;
+                            btn.classList.add('pe-none', 'booked-seat');
                             btn.setAttribute('title', 'Sold Out');
-                            
-                            if (state.selectedSeats.includes(seatId) && seatInfo.bookedBySession !== mySessionId) {
-                                handleSeatClick(btn, true); 
-                                window.showToast(`Seat ${seatId} was just purchased by someone else!`, true);
-                            }
+                            btn.classList.remove('seatColor'); 
                         } 
                         else if (seatInfo.status === 'locked') {
-                            if (now - (seatInfo.lockedAt || 0) > 60000) {
-                                // Ignore expired locks locally
-                            } else if (seatInfo.lockedBy !== mySessionId) {
-                                btn.classList.add('bg-danger', 'text-white', 'pe-none');
-                                btn.setAttribute('title', 'Currently being reviewed by another user');
+                            if (now - (seatInfo.lockedAt || 0) > 120000) {
+                                // Ignore expired locks
+                            } else {
+                                bookedOrLockedCount++;
+                                if (seatInfo.lockedBy !== mySessionId) {
+                                    btn.classList.add('bg-danger', 'text-white', 'pe-none');
+                                    btn.setAttribute('title', 'Currently being reviewed by another user');
+                                }
                             }
                         }
                     }
+                    
+                    if (state.selectedSeats.includes(seatId) && (!seatInfo || seatInfo.status !== 'booked')) {
+                        btn.classList.add("seatColor");
+                    }
                 });
+                
+                const seatCountEl = document.getElementById("seat-count");
+                if (seatCountEl) {
+                    seatCountEl.innerText = 40 - bookedOrLockedCount;
+                }
             });
         }
     } catch (e) {
         console.warn("Firebase Realtime DB not ready yet.", e);
+    }
+}
+
+function filterAvailableTimes() {
+    const selectedDate = els.date.value;
+    if (!selectedDate) return;
+
+    const todayStr = getLocalDateString(0);
+
+    if (selectedDate === todayStr) {
+        const now = new Date();
+        const currentHour = now.getHours() + (now.getMinutes() / 60);
+
+        const timeMap = {
+            "07:00 AM": 7.0,
+            "10:30 AM": 10.5,
+            "02:30 PM": 14.5,
+            "08:00 PM": 20.0,
+            "11:30 PM": 23.5
+        };
+
+        let validExists = false;
+        Array.from(els.time.options).forEach(opt => {
+            if (!opt.value) return; 
+            
+            if (timeMap[opt.value] <= currentHour) {
+                opt.disabled = true;
+                if (els.time.value === opt.value) {
+                    els.time.value = ""; 
+                }
+            } else {
+                opt.disabled = false;
+                validExists = true;
+            }
+        });
+
+        if (!validExists) {
+            window.showToast("All buses have departed for today. Please select tomorrow.", true);
+            els.date.value = "";
+            els.time.value = "";
+        }
+    } else {
+        Array.from(els.time.options).forEach(opt => opt.disabled = false);
     }
 }
 
@@ -156,6 +231,8 @@ function validateJourney() {
             window.showToast("Journey changed. Please re-select your seats.", false);
             resetSeats();
         }
+        
+        listenToRouteSeats();
     } else {
         setJourneyValid(false);
     }
@@ -185,6 +262,10 @@ function handleSeatClick(btn, forceUnclick = false) {
         if (dbSeatsRef) dbSeatsRef.child(seatId).remove();
         clearTimeout(lockTimers[seatId]); 
         
+        if (state.selectedSeats.length === 0) {
+            state.appliedCoupon = null;
+        }
+        
         renderUI();
         return; 
     }
@@ -206,10 +287,10 @@ function handleSeatClick(btn, forceUnclick = false) {
 
     lockTimers[seatId] = setTimeout(() => {
         if (state.selectedSeats.includes(seatId)) {
-            window.showToast(`Seat ${seatId} was released due to 60 seconds of inactivity.`, true);
+            window.showToast(`Seat ${seatId} was released due to 2 minutes of inactivity.`, true);
             handleSeatClick(btn, true); 
         }
-    }, 60000);
+    }, 120000);
     
     const badge = $("nav-cart-badge");
     badge.classList.remove("animation-pop");
@@ -221,8 +302,6 @@ function handleSeatClick(btn, forceUnclick = false) {
 
 function renderUI() {
     $("ticket-count").innerText = state.selectedSeats.length;
-    $("seat-count").innerText = 40 - state.selectedSeats.length; 
-    
     $("total-price").innerText = state.total;
     $("grand-total").innerText = state.grandTotal;
     
@@ -234,7 +313,23 @@ function renderUI() {
         </div>
     `).join("");
 
-    els.applyBtn.disabled = state.selectedSeats.length !== state.maxSeats;
+    els.applyBtn.disabled = state.selectedSeats.length === 0;
+    
+    if (state.appliedCoupon && state.selectedSeats.length > 0) {
+        $("couponSection").style.display = "none";
+        $("discount-price").innerHTML = `
+            <div class="d-flex justify-content-between text-success border-bottom pb-2">
+                <p class="m-0">Discount Applied (${state.appliedCoupon})</p>
+                <p class="m-0">- BDT ${state.discountAmt}</p>
+            </div>`;
+    } else {
+        state.appliedCoupon = null;
+        $("couponSection").style.display = "flex";
+        $("couponSection").style.opacity = "1";
+        $("coupon-code").value = "";
+        $("discount-price").innerHTML = "";
+    }
+
     checkFormReady();
     updateMiniCart();
 }
@@ -248,14 +343,11 @@ function resetSeats() {
     }
 
     state.selectedSeats = [];
-    state.discountAmt = 0;
+    state.appliedCoupon = null; 
+    
     els.seats.forEach(btn => {
         btn.classList.remove("seatColor");
     });
-    $("couponSection").style.display = "flex";
-    $("couponSection").style.opacity = "1";
-    $("coupon-code").value = "";
-    $("discount-price").innerHTML = "";
     renderUI();
 }
 
@@ -271,21 +363,29 @@ function updateMiniCart() {
     const invoiceState = $("cart-invoice-state");
     const badge = $("nav-cart-badge");
 
-    invoiceState.classList.add("d-none");
-    invoiceState.classList.remove("d-flex");
-
     if (state.selectedSeats.length === 0) {
-        emptyState.classList.remove("d-none");
-        filledState.classList.add("d-none");
-        badge.classList.add("d-none");
-        badge.classList.replace("bg-success", "bg-danger");
+        if (state.bookingHistory.length > 0) {
+            emptyState.classList.add("d-none");
+            filledState.classList.add("d-none");
+            renderTicketHistory(); 
+            badge.classList.add("d-none"); 
+        } else {
+            emptyState.classList.remove("d-none");
+            filledState.classList.add("d-none");
+            invoiceState.classList.add("d-none");
+            invoiceState.classList.remove("d-flex");
+            badge.classList.add("d-none");
+        }
     } else {
         emptyState.classList.add("d-none");
+        invoiceState.classList.add("d-none");
+        invoiceState.classList.remove("d-flex");
         filledState.classList.remove("d-none");
+        
         badge.classList.remove("d-none");
         badge.classList.replace("bg-success", "bg-danger");
-        
         badge.innerText = state.selectedSeats.length;
+        
         $("cart-seat-badge").innerText = `${state.selectedSeats.length}/${state.maxSeats}`;
         $("cart-route").innerText = $("display-route").innerText;
         $("cart-total").innerText = state.grandTotal;
@@ -307,89 +407,308 @@ window.showToast = function(msg, isError = false) {
 }
 
 // ==========================================
-// 4. EVENT LISTENERS & FORM SUBMISSIONS
+// 4. EVENT LISTENERS
 // ==========================================
-els.origDiv.addEventListener("change", () => handleLocationChange(els.origDiv, els.origDist));
-els.destDiv.addEventListener("change", () => handleLocationChange(els.destDiv, els.destDist));
-[els.origDist, els.destDist, els.busClass, els.date, els.time].forEach(el => el.addEventListener("change", validateJourney));
-els.seats.forEach(btn => btn.addEventListener("click", () => handleSeatClick(btn)));
-["passName", "phoneNumber"].forEach(id => $(id).addEventListener("input", checkFormReady));
+if(els.origDiv) {
+    els.origDiv.addEventListener("change", () => handleLocationChange(els.origDiv, els.origDist));
+    els.destDiv.addEventListener("change", () => handleLocationChange(els.destDiv, els.destDist));
+    
+    els.date.addEventListener("change", () => {
+        filterAvailableTimes();
+        validateJourney();
+    });
+    
+    [els.origDist, els.destDist, els.busClass, els.time].forEach(el => el.addEventListener("change", validateJourney));
+    els.seats.forEach(btn => btn.addEventListener("click", () => handleSeatClick(btn)));
+    ["passName", "phoneNumber"].forEach(id => $(id).addEventListener("input", checkFormReady));
+    
+    els.applyBtn.addEventListener("click", () => {
+        const code = $("coupon-code").value.trim().toUpperCase();
+        if (!API.coupons[code]) return window.showToast("Invalid or expired coupon code.", true);
+        
+        state.appliedCoupon = code;
+        
+        $("couponSection").style.opacity = "0";
+        setTimeout(() => {
+            renderUI();
+            window.showToast("Coupon applied successfully!");
+        }, 300);
+    });
+}
 
-els.applyBtn.addEventListener("click", () => {
-    const code = $("coupon-code").value.trim();
-    if (!API.coupons[code]) return window.showToast("Invalid coupon code.", true);
-    
-    state.discountAmt = state.total * API.coupons[code];
-    
-    $("couponSection").style.opacity = "0";
-    setTimeout(() => $("couponSection").style.display = "none", 300);
-    
-    $("discount-price").innerHTML = `
-        <div class="d-flex justify-content-between text-success border-bottom pb-2">
-            <p class="m-0">Discount Applied</p>
-            <p class="m-0">- BDT ${state.discountAmt}</p>
-        </div>`;
-    
-    window.showToast("Coupon applied successfully!");
-    renderUI();
-});
+if(els.passengerForm) {
+    els.passengerForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        if (!els.passengerForm.checkValidity()) return els.passengerForm.classList.add("was-validated");
 
-els.passengerForm.addEventListener("submit", (e) => {
+        const offcanvasEl = $("ticketCartOffcanvas");
+        let offcanvas = bootstrap.Offcanvas.getInstance(offcanvasEl);
+        if (offcanvas) offcanvas.hide();
+
+        $("payment-total-amount").innerText = state.grandTotal;
+
+        setTimeout(() => {
+            new bootstrap.Modal($("paymentModal")).show();
+        }, 400); 
+    });
+}
+
+const processPayment = (e) => {
     e.preventDefault();
-    if (!els.passengerForm.checkValidity()) return els.passengerForm.classList.add("was-validated");
-
-    const originalText = els.nextBtn.innerHTML;
-    els.nextBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Processing...';
-    els.nextBtn.disabled = true;
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Processing...';
+    submitBtn.disabled = true;
 
     setTimeout(() => {
-        els.nextBtn.innerHTML = originalText;
-        els.nextBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+        bootstrap.Modal.getInstance($("paymentModal")).hide();
+        finalizeBooking();
+    }, 1500);
+};
 
-        $("cart-empty-state").classList.add("d-none");
-        $("cart-filled-state").classList.add("d-none");
-        $("cart-invoice-state").classList.remove("d-none");
-        $("cart-invoice-state").classList.add("d-flex");
+if($("paymentFormCard")) $("paymentFormCard").addEventListener("submit", processPayment);
+if($("paymentFormBkash")) $("paymentFormBkash").addEventListener("submit", processPayment);
+if($("paymentFormNagad")) $("paymentFormNagad").addEventListener("submit", processPayment);
 
-        // Populate visual DOM
-        $("invoice-name").innerText = $("passName").value;
-        $("invoice-phone").innerText = $("phoneNumber").value;
-        $("invoice-email").innerText = $("passEmail").value || "Not provided";
-        $("invoice-route").innerText = $("display-route").innerText;
-        $("invoice-date").innerText = $("display-date").innerText;
-        $("invoice-time").innerText = $("display-time").innerText;
-        $("invoice-total").innerText = state.grandTotal;
-        $("invoice-seats").innerText = state.selectedSeats.join(", ");
+function finalizeBooking() {
+    // Collect the ticket data
+    const newTicket = {
+        name: $("passName").value,
+        phone: $("phoneNumber").value,
+        email: $("passEmail").value.trim() || "Not provided",
+        route: $("display-route").innerText,
+        date: $("display-date").innerText,
+        time: $("display-time").innerText,
+        total: state.grandTotal,
+        seats: [...state.selectedSeats],
+        timestamp: new Date().toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', month: 'short', day: 'numeric', year: 'numeric' })
+    };
 
-        const badge = $("nav-cart-badge");
-        badge.classList.replace("bg-danger", "bg-success");
-        badge.innerHTML = "✓";
-        badge.classList.remove("animation-pop");
-        void badge.offsetWidth;
-        badge.classList.add("animation-pop");
+    // Store the seats to push to DB
+    const seatsToBook = [...state.selectedSeats];
 
-        if (dbSeatsRef && state.selectedSeats.length > 0) {
-            state.selectedSeats.forEach(seatId => {
-                clearTimeout(lockTimers[seatId]); 
-                dbSeatsRef.child(seatId).set({
-                    status: 'booked',
-                    bookedBySession: mySessionId, 
-                    bookedBy: $("passName").value
-                });
+    // FIX: Nuke Local Cart BEFORE talking to DB to prevent the "Ghost Green" race condition
+    state.selectedSeats = [];
+    
+    // Add to history
+    state.bookingHistory.unshift(newTicket);
+
+    // Tell Firebase to permanently lock them
+    if (dbSeatsRef && seatsToBook.length > 0) {
+        seatsToBook.forEach(seatId => {
+            clearTimeout(lockTimers[seatId]); 
+            dbSeatsRef.child(seatId).set({
+                status: 'booked',
+                bookedBySession: mySessionId, 
+                bookedBy: newTicket.name
             });
-        }
+        });
+    }
 
-        $("couponSection").style.display = "flex";
-        $("couponSection").style.opacity = "1";
-        $("coupon-code").value = "";
-        $("discount-price").innerHTML = "";
-        els.applyBtn.disabled = true;
-        els.passengerForm.reset();
-        els.passengerForm.classList.remove("was-validated");
+    if (newTicket.email !== "Not provided") {
+        $("success-email-text").innerHTML = `An E-Ticket has been successfully sent to <strong>${newTicket.email}</strong>.`;
+        setTimeout(() => window.showToast(`E-Ticket Dispatched to ${newTicket.email} via Secure Server.`, false), 1000);
+    } else {
+        $("success-email-text").innerText = "No email provided. You can view your ticket history below.";
+    }
 
+    state.appliedCoupon = null;
+    $("couponSection").style.display = "flex";
+    $("couponSection").style.opacity = "1";
+    $("coupon-code").value = "";
+    $("discount-price").innerHTML = "";
+    els.applyBtn.disabled = true;
+    els.passengerForm.reset();
+    els.passengerForm.classList.remove("was-validated");
+
+    renderTicketHistory();
+
+    setTimeout(() => {
         new bootstrap.Modal($("my_modal_1")).show();
-    }, 1200);
-});
+    }, 500);
+}
+
+// === TICKET HISTORY TABS ===
+function renderTicketHistory() {
+    $("cart-empty-state").classList.add("d-none");
+    $("cart-filled-state").classList.add("d-none");
+    $("cart-invoice-state").classList.remove("d-none");
+    $("cart-invoice-state").classList.add("d-flex");
+
+    const container = $("ticket-history-container");
+    if (state.bookingHistory.length === 0) return;
+
+    const latestTicket = state.bookingHistory[0];
+    const pastTickets = state.bookingHistory.slice(1);
+
+    function buildCard(ticket, ticketNum, isLatest) {
+        const badge = isLatest ? `<span class="badge bg-primary-green ms-2">New</span>` : `<span class="badge bg-secondary ms-2">Archived</span>`;
+        return `
+        <div class="ticket-invoice-card border border-dashed border-2 ${isLatest ? 'border-success' : 'border-secondary'} border-opacity-25 rounded-12 p-4 bg-light-gray position-relative overflow-hidden shadow-sm mb-4">
+          <div class="invoice-cutout-left position-absolute bg-white rounded-circle" style="width:30px; height:30px; left:-15px; top:50%; transform:translateY(-50%);"></div>
+          <div class="invoice-cutout-right position-absolute bg-white rounded-circle" style="width:30px; height:30px; right:-15px; top:50%; transform:translateY(-50%);"></div>
+          
+          <h6 class="font-raleway fw-bold text-dark-main mb-3 border-bottom border-dashed pb-2">Ticket #${ticketNum} ${badge}</h6>
+          
+          <div class="mb-3">
+            <p class="font-inter small text-muted m-0">Name</p>
+            <p class="font-inter fw-bold text-dark-main m-0 text-truncate">${ticket.name}</p>
+          </div>
+          
+          <div class="d-flex flex-column flex-sm-row justify-content-between mb-3 gap-1">
+            <div class="w-100 pe-sm-2">
+              <p class="font-inter small text-muted m-0">Phone</p>
+              <p class="font-inter fw-bold text-dark-main m-0 text-truncate">${ticket.phone}</p>
+            </div>
+            <div class="w-100 text-sm-end ps-sm-2 mt-2 mt-sm-0">
+              <p class="font-inter small text-muted m-0">Email</p>
+              <p class="font-inter fw-bold text-dark-main m-0 text-truncate">${ticket.email}</p>
+            </div>
+          </div>
+
+          <h6 class="font-raleway fw-bold text-dark-main mb-3 border-bottom border-dashed pb-2 pt-2">Trip Details</h6>
+          
+          <div class="d-flex flex-column flex-sm-row justify-content-between mb-3 gap-1">
+            <div class="w-100 pe-sm-2">
+              <p class="font-inter small text-muted m-0">Route</p>
+              <p class="font-inter fw-bold text-primary-green m-0 text-break">${ticket.route}</p>
+            </div>
+            <div class="w-100 text-sm-end ps-sm-2 mt-2 mt-sm-0">
+              <p class="font-inter small text-muted m-0">Date & Time</p>
+              <p class="font-inter fw-bold text-dark-main m-0"><span>${ticket.date}</span>, <br /><span>${ticket.time}</span></p>
+            </div>
+          </div>
+          
+          <div class="d-flex flex-column flex-sm-row justify-content-between mb-3 gap-1">
+            <div class="w-100 pe-sm-2">
+              <p class="font-inter small text-muted m-0">Seats (${ticket.seats.length})</p>
+              <p class="font-inter fw-bold text-dark-main m-0">${ticket.seats.join(", ")}</p>
+            </div>
+            <div class="w-100 text-sm-end ps-sm-2 mt-2 mt-sm-0">
+              <p class="font-inter small text-muted m-0">Amount Paid</p>
+              <p class="font-inter fw-bold text-dark-main m-0">BDT <span>${ticket.total}</span></p>
+            </div>
+          </div>
+          <div class="text-center mt-3 pt-3 border-top border-dashed">
+             <p class="small text-muted mb-0" style="font-size:10px;">Purchased on: ${ticket.timestamp}</p>
+          </div>
+        </div>`;
+    }
+
+    let pastTicketsHtml = '';
+    if (pastTickets.length === 0) {
+        pastTicketsHtml = `<p class="text-center text-muted small mt-4">No past bookings found.</p>`;
+    } else {
+        pastTickets.forEach((ticket, index) => {
+            pastTicketsHtml += buildCard(ticket, state.bookingHistory.length - 1 - index, false);
+        });
+    }
+
+    container.innerHTML = `
+        <div class="text-center mb-4 pt-3">
+          <div class="d-inline-flex align-items-center justify-content-center bg-success bg-opacity-10 text-success rounded-circle mb-3" style="width: 60px; height: 60px">
+            <svg width="30" height="30" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425a.247.247 0 0 1 .02-.022Z"/>
+            </svg>
+          </div>
+          <h4 class="font-raleway fw-bold text-dark-main">Your E-Tickets</h4>
+        </div>
+
+        <ul class="nav nav-pills mb-4 justify-content-center gap-2" id="history-tabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active rounded-pill px-4 py-2 small fw-bold shadow-sm" data-bs-toggle="pill" data-bs-target="#tab-latest" type="button" role="tab">Latest Booking</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link rounded-pill px-4 py-2 small fw-bold shadow-sm" data-bs-toggle="pill" data-bs-target="#tab-past" type="button" role="tab">Past Bookings</button>
+          </li>
+        </ul>
+
+        <div class="tab-content">
+          <div class="tab-pane fade show active" id="tab-latest" role="tabpanel">
+             ${buildCard(latestTicket, state.bookingHistory.length, true)}
+          </div>
+          <div class="tab-pane fade" id="tab-past" role="tabpanel">
+             ${pastTicketsHtml}
+          </div>
+        </div>
+    `;
+}
+
+// === FIX: THE PURE OFFLINE E-TICKET BLOB GENERATOR ===
+const downloadTicketBtn = $("downloadTicketBtn");
+if (downloadTicketBtn) {
+    downloadTicketBtn.addEventListener("click", () => {
+        // Find the latest ticket
+        if (state.bookingHistory.length === 0) return;
+        const ticketInfo = state.bookingHistory[0];
+        
+        const amountPerTicket = (ticketInfo.total / ticketInfo.seats.length).toFixed(2);
+        
+        let ticketsHtml = '';
+        ticketInfo.seats.forEach((seatNum, index) => {
+            ticketsHtml += `
+            <div class="ticket">
+                <div class="header">NexTrip Digital Ticket</div>
+                <div class="details">
+                    <p><strong>Passenger:</strong> ${ticketInfo.name}</p>
+                    <p><strong>Phone:</strong> ${ticketInfo.phone}</p>
+                    <p><strong>Route:</strong> ${ticketInfo.route}</p>
+                    <p><strong>Date & Time:</strong> ${ticketInfo.date} at ${ticketInfo.time}</p>
+                    <h2 class="seat-badge">Seat: ${seatNum}</h2>
+                    <p class="price">Amount Paid: BDT ${amountPerTicket}</p>
+                </div>
+                <div class="footer">Ticket ${index + 1} of ${ticketInfo.seats.length} - Scan code upon boarding</div>
+            </div>`;
+        });
+
+        // Generates native HTML file instantly to avoid external dependencies
+        const fullHtml = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <title>NexTrip Tickets - ${ticketInfo.name}</title>
+            <style>
+                body { font-family: 'Arial', sans-serif; background: #e5e5e5; padding: 40px; display: flex; flex-direction: column; align-items: center; gap: 30px; margin: 0; }
+                .ticket { background: #fff; width: 100%; max-width: 500px; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 2px dashed #d1d1d1; page-break-inside: avoid; }
+                .header { background: #1dd100; color: #fff; padding: 25px; text-align: center; font-size: 26px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
+                .details { padding: 30px; }
+                .details p { margin: 12px 0; color: #444; font-size: 16px; border-bottom: 1px solid #f0f0f0; padding-bottom: 8px; }
+                .details p strong { color: #111; display: inline-block; width: 120px; }
+                .seat-badge { background: #e2136e; color: #fff; padding: 15px; text-align: center; border-radius: 8px; margin: 25px 0; font-size: 28px; font-weight: 900; letter-spacing: 2px; }
+                .price { font-size: 22px !important; font-weight: bold; color: #1dd100 !important; text-align: right; margin-top: 20px !important; border: none !important; }
+                .footer { background: #f9f9f9; text-align: center; padding: 15px; font-size: 14px; color: #888; font-weight: bold; }
+                @media print {
+                    body { background: #fff; padding: 0; gap: 0; }
+                    .ticket { box-shadow: none; border: 2px dashed #000; margin-bottom: 40px; page-break-after: always; }
+                }
+            </style>
+        </head>
+        <body>
+            ${ticketsHtml}
+            <script>
+                // Auto-open print dialog to save as PDF physically
+                window.onload = () => setTimeout(() => window.print(), 500);
+            </script>
+        </body>
+        </html>
+        `;
+
+        const blob = new Blob([fullHtml], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `NexTrip_Tickets_${ticketInfo.name.replace(/\s+/g, '_')}.html`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        window.showToast("E-Tickets downloaded securely!", false);
+    });
+}
 
 const viewTicketBtn = $("viewTicketBtn");
 if (viewTicketBtn) {
@@ -402,6 +721,7 @@ if (viewTicketBtn) {
             let offcanvas = bootstrap.Offcanvas.getInstance(offcanvasEl);
             if (!offcanvas) offcanvas = new bootstrap.Offcanvas(offcanvasEl);
             offcanvas.show();
+            updateMiniCart(); 
         }, 300);
     });
 }
@@ -419,13 +739,13 @@ if (ticketCartOffcanvas) {
             badge.innerText = "0";
             
             state.selectedSeats = [];
-            state.discountAmt = 0;
+            state.appliedCoupon = null;
             $("ticket-count").innerText = 0;
-            $("seat-count").innerText = 40;
             $("total-price").innerText = 0;
             $("grand-total").innerText = 0;
             $("selected-seat-num").innerHTML = "";
-            els.seats.forEach(btn => btn.classList.remove("seatColor"));
+            
+            listenToRouteSeats(); 
         }
     });
 }
@@ -434,6 +754,7 @@ window.addEventListener("userLoggedOut", () => {
     resetSeats();
     els.passengerForm.reset();
     els.passengerForm.classList.remove("was-validated");
+    state.bookingHistory = []; 
     
     $("cart-empty-state").classList.remove("d-none");
     $("cart-filled-state").classList.add("d-none");
@@ -442,84 +763,53 @@ window.addEventListener("userLoggedOut", () => {
     $("nav-cart-badge").classList.add("d-none");
 });
 
-if (els.feedbackForm) {
-    els.feedbackForm.addEventListener("submit", (e) => {
-        e.preventDefault();
-        
-        if (!window.isUserLoggedIn) {
-            const modal = bootstrap.Modal.getOrCreateInstance($("authModal"));
-            modal.show();
-            window.showToast("You must be logged in to submit feedback.", true);
-            return;
-        }
-
-        if (!els.feedbackForm.checkValidity()) return els.feedbackForm.classList.add("was-validated");
-
-        const btn = $("feedback-submit-btn");
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Sending...';
-        btn.disabled = true;
-
-        setTimeout(() => {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-            
-            const type = $("feedbackType").value;
-            els.feedbackForm.reset();
-            els.feedbackForm.classList.remove("was-validated");
-
-            if (type === "complaint") window.showToast("Complaint registered. Authority will contact you.", false);
-            else if (type === "lost") window.showToast("Report submitted. We will check lost & found.", false);
-            else window.showToast("Thank you! Your feedback helps us improve.", false);
-        }, 1500);
-    });
-}
-
 const searchIndex = [];
 for (const [div, dists] of Object.entries(API.divisions)) {
     searchIndex.push({ name: div, type: "Division", parent: div });
     dists.forEach(dist => searchIndex.push({ name: dist, type: "District", parent: div }));
 }
 
-els.searchInput.addEventListener("input", (e) => {
-    const query = e.target.value.toLowerCase().trim();
-    els.searchResults.innerHTML = "";
-    
-    if (!query) return $("search-placeholder").style.display = "block";
-    $("search-placeholder").style.display = "none";
+if(els.searchInput) {
+    els.searchInput.addEventListener("input", (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        els.searchResults.innerHTML = "";
+        
+        if (!query) return $("search-placeholder").style.display = "block";
+        $("search-placeholder").style.display = "none";
 
-    const results = searchIndex.filter(loc => loc.name.toLowerCase().includes(query));
-    
-    if (results.length === 0) {
-        els.searchResults.innerHTML = `<li class="text-center text-danger py-3">No locations found.</li>`;
-        return;
-    }
+        const results = searchIndex.filter(loc => loc.name.toLowerCase().includes(query));
+        
+        if (results.length === 0) {
+            els.searchResults.innerHTML = `<li class="text-center text-danger py-3">No locations found.</li>`;
+            return;
+        }
 
-    results.forEach(loc => {
-        const li = document.createElement("li");
-        li.className = "d-flex justify-content-between align-items-center font-inter text-dark-main border-bottom border-light p-2 cursor-pointer hover-bg-light";
-        li.innerHTML = `
-            <div>
-                <span class="fs-5">${loc.name.replace(new RegExp(`(${query})`, "gi"), "<span class='text-primary-green fw-bold'>$1</span>")}</span>
-                <span class="text-muted small d-block">${loc.type === "District" ? `District in ${loc.parent}` : "Division"}</span>
-            </div>
-            <span class="badge bg-light text-dark border">Select</span>
-        `;
-        li.onclick = () => {
-            bootstrap.Modal.getInstance($("searchModal"))?.hide();
-            els.origDiv.value = loc.parent;
-            handleLocationChange(els.origDiv, els.origDist);
-            els.origDist.value = loc.name;
-            validateJourney();
-            $("paribahan-are").scrollIntoView({ behavior: "smooth", block: "start" });
-            els.searchInput.value = "";
-            els.searchResults.innerHTML = "";
-            $("search-placeholder").style.display = "block";
-            window.showToast(`Origin set to ${loc.name}. Select destination next.`, false);
-        };
-        els.searchResults.appendChild(li);
+        results.forEach(loc => {
+            const li = document.createElement("li");
+            li.className = "d-flex justify-content-between align-items-center font-inter text-dark-main border-bottom border-light p-2 cursor-pointer hover-bg-light";
+            li.innerHTML = `
+                <div>
+                    <span class="fs-5">${loc.name.replace(new RegExp(`(${query})`, "gi"), "<span class='text-primary-green fw-bold'>$1</span>")}</span>
+                    <span class="text-muted small d-block">${loc.type === "District" ? `District in ${loc.parent}` : "Division"}</span>
+                </div>
+                <span class="badge bg-light text-dark border">Select</span>
+            `;
+            li.onclick = () => {
+                bootstrap.Modal.getInstance($("searchModal"))?.hide();
+                els.origDiv.value = loc.parent;
+                handleLocationChange(els.origDiv, els.origDist);
+                els.origDist.value = loc.name;
+                validateJourney();
+                $("paribahan-are").scrollIntoView({ behavior: "smooth", block: "start" });
+                els.searchInput.value = "";
+                els.searchResults.innerHTML = "";
+                $("search-placeholder").style.display = "block";
+                window.showToast(`Origin set to ${loc.name}. Select destination next.`, false);
+            };
+            els.searchResults.appendChild(li);
+        });
     });
-});
+}
 
 const scrollObserver = new IntersectionObserver(entries => {
     entries.forEach(entry => entry.isIntersecting ? entry.target.classList.add("active") : entry.target.classList.remove("active"));

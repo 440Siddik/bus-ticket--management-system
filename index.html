@@ -26,12 +26,44 @@
     
     <style>
       /* ====================================================
-         UNIVERSAL RESPONSIVE ENGINE & SCROLLBAR ERADICATOR
+         UNIVERSAL RESPONSIVE ENGINE & UX POLISH
          ==================================================== */
          
-      /* Standard safeguard to prevent rogue horizontal scroll */
       body {
           overflow-x: hidden;
+      }
+
+      input[type="text"], input[type="tel"], input[type="email"], input[type="date"], input[type="password"] {
+          cursor: text !important;
+      }
+
+      .btn-custom-logout {
+          background-color: #ff6b6b !important;
+          color: white !important;
+          border: none !important;
+      }
+      .btn-custom-logout:hover {
+          background-color: #ff4c4c !important;
+      }
+
+      /* FIX: Unmistakable Booked Seat Styling */
+      .booked-seat {
+          background-color: #9ca3af !important;
+          border-color: #9ca3af !important;
+          color: #ffffff !important;
+          opacity: 0.8 !important;
+          pointer-events: none !important;
+      }
+
+      /* Custom Tabs */
+      .nav-pills .nav-link.active {
+          background-color: var(--primary-green) !important;
+          color: white !important;
+          font-weight: bold;
+      }
+      .nav-pills .nav-link {
+          color: #6c757d;
+          font-family: 'Inter', sans-serif;
       }
 
       .window-seat {
@@ -45,7 +77,6 @@
           transition: filter 0.3s ease; 
       }
 
-      /* Hero Section Image Protection to stop text bleeding */
       .banner-area > img {
           min-height: 500px !important;
           object-fit: cover !important;
@@ -205,30 +236,31 @@
               
               <div class="row mt-5 gy-4">
                 <div class="col-lg-6 hover-lift-subtle transition-all">
-                  <div class="cupon-first d-flex align-items-center justify-content-between rounded-12 w-100 h-100 position-relative overflow-hidden shadow-sm" style="background-color: #ffbf0f">
-                    <div class="p-4 p-lg-5 text-dark-main">
+                  <div class="cupon-first d-flex align-items-center justify-content-between rounded-12 w-100 h-100 position-relative overflow-hidden shadow-sm" style="background-color: #e5e5e5; filter: grayscale(80%); border: 1px solid #dcdcdc;">
+                    <div class="p-4 p-lg-5 text-dark-main opacity-50">
                       <span class="display-5 fw-black font-inter m-0 fw-bold">15% OFF</span><br />
-                      <span class="fs-5 fw-medium font-inter">on your next purchase</span><br />
-                      <span class="text-dark-light fw-medium font-inter mt-1 d-block">use by January <script>document.write(new Date().getFullYear())</script></span>
+                      <span class="fs-5 fw-medium font-inter">No longer available</span><br />
+                      <span class="text-dark-light fw-medium font-inter mt-1 d-block">Offer ended</span>
                     </div>
-                    <img src="images/cupon-devider.png" class="h-100 position-absolute end-0 start-50 translate-middle-x d-none d-sm-block" alt="" />
-                    <div class="p-4 p-lg-5 text-center font-raleway pe-lg-5 z-1">
-                      <span class="display-6 fw-bold">NEW15</span><br />
-                      <span class="fs-5 fw-medium text-dark-muted">Coupon Code</span>
+                    <img src="images/cupon-devider.png" class="h-100 position-absolute end-0 start-50 translate-middle-x d-none d-sm-block opacity-25" alt="" />
+                    <div class="p-4 p-lg-5 text-center font-raleway pe-lg-5 z-1 opacity-50">
+                      <span class="display-6 fw-bold text-decoration-line-through">NEW15</span><br />
+                      <span class="fs-5 fw-medium text-dark-muted">Invalid Code</span>
                     </div>
                   </div>
                 </div>
+
                 <div class="col-lg-6 hover-lift-subtle transition-all">
-                  <div class="cupon-first cupon-second d-flex align-items-center justify-content-between rounded-12 w-100 h-100 position-relative overflow-hidden shadow-sm" style="background-color: #f78c9c">
-                    <div class="p-4 p-lg-5 text-dark-main">
+                  <div class="cupon-first cupon-second d-flex align-items-center justify-content-between rounded-12 w-100 h-100 position-relative overflow-hidden shadow-sm" style="background-color: #d12c2c; color: white;">
+                    <div class="p-4 p-lg-5 text-white">
                       <span class="display-5 fw-black font-inter m-0 fw-bold">20% OFF</span><br />
-                      <span class="fs-5 fw-medium font-inter">on your next purchase</span><br />
-                      <span class="text-dark-light fw-medium font-inter mt-1 d-block">use by January <script>document.write(new Date().getFullYear())</script></span>
+                      <span class="fs-5 fw-medium font-inter">Kurbani Eid Special!</span><br />
+                      <span class="text-white-50 fw-medium font-inter mt-1 d-block">use by May 28 2026</span>
                     </div>
-                    <img src="images/cupon-devider.png" class="h-100 position-absolute end-0 start-50 translate-middle-x d-none d-sm-block" alt="" />
-                    <div class="p-4 p-lg-5 text-center font-raleway pe-lg-5 z-1">
-                      <span class="display-6 fw-bold">Couple 20</span><br />
-                      <span class="fs-5 fw-medium text-dark-muted">Coupon Code</span>
+                    <img src="images/cupon-devider.png" class="h-100 position-absolute end-0 start-50 translate-middle-x d-none d-sm-block" alt="" style="filter: brightness(0) invert(1); opacity: 0.7;" />
+                    <div class="p-4 p-lg-5 text-center font-raleway pe-lg-5 z-1 text-white">
+                      <span class="display-6 fw-bold">EID2026</span><br />
+                      <span class="fs-5 fw-medium text-white-50">Coupon Code</span>
                     </div>
                   </div>
                 </div>
@@ -363,14 +395,14 @@
                 </div>
 
                 <div class="bus-details bg-light-gray rounded-12 p-4 mt-4 shadow-sm transition-all" id="ticket-visual-card">
-                  <div class="d-flex justify-content-between divider-dashed pb-3 mb-3 gap-2">
+                  <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center divider-dashed pb-3 mb-3 gap-2">
                     <p class="text-dark-muted font-raleway fw-semibold m-0" style="min-width: 80px;">Route</p>
-                    <p class="font-raleway fw-bold text-dark-main m-0 text-end" id="display-route">Select Route Above</p>
+                    <p class="font-raleway fw-bold text-dark-main m-0 text-sm-end" id="display-route">Select Route Above</p>
                   </div>
                   
-                  <div class="d-flex justify-content-between divider-dashed pb-3 mb-3 gap-2">
+                  <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center divider-dashed pb-3 mb-3 gap-2">
                     <p class="text-dark-muted font-raleway fw-semibold m-0" style="min-width: 80px;">Departure</p>
-                    <p class="font-raleway fw-bold text-dark-main m-0 text-end">
+                    <p class="font-raleway fw-bold text-dark-main m-0 text-sm-end">
                       <span id="display-date">Select Date</span>,
                       <span id="display-time">--:--</span>
                     </p>
@@ -424,8 +456,11 @@
                     <p class="font-inter fw-medium text-primary-green d-flex align-items-center m-0">
                       <img class="me-2" src="images/seat-green-filled.png" alt="" />Your Selection
                     </p>
+                    <p class="font-inter fw-medium text-secondary d-flex align-items-center m-0">
+                      <span style="display:inline-block; width:15px; height:15px; background-color:#9ca3af; border-radius:3px; margin-right:8px; opacity:0.8;"></span> Booked
+                    </p>
                     <p class="font-inter fw-medium text-danger d-flex align-items-center m-0">
-                      <span style="display:inline-block; width:15px; height:15px; background-color:#ff4d4d; border-radius:3px; margin-right:8px;"></span> Locked (Others)
+                      <span style="display:inline-block; width:15px; height:15px; background-color:#ff4d4d; border-radius:3px; margin-right:8px;"></span> Locked
                     </p>
                   </div>
 
@@ -618,7 +653,7 @@
                       <label class="form-label font-inter fw-bold">Email ID (Optional)</label>
                       <input type="email" id="passEmail" class="form-control re-from shadow-sm" placeholder="Enter your email id" />
                     </div>
-                    <button id="next-btn" type="submit" class="btn next-btn font-raleway fs-5 shadow position-relative" disabled>Next</button>
+                    <button id="next-btn" type="submit" class="btn next-btn font-raleway fs-5 shadow position-relative" disabled>Continue to Payment</button>
                   </form>
                 </div>
               </div>
@@ -740,7 +775,9 @@
           </div>
         </div>
       </footer>
-    </div> <div class="modal fade" id="authModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+    </div> 
+
+    <div class="modal fade" id="authModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded-4 border-0 shadow-lg p-4">
           <div class="modal-header border-0 pb-0 justify-content-center">
@@ -786,22 +823,84 @@
       </div>
     </div>
 
-    <div class="modal fade" id="searchModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content rounded-4 border-0 shadow-lg" style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);">
-          <div class="modal-body p-4">
-            <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
-              <input type="text" id="global-search-input" class="form-control border-0 fs-4 font-inter shadow-none bg-transparent" placeholder="Search for districts or divisions (e.g., Sylhet, Bogura)..." autocomplete="off" />
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="modal fade" id="paymentModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg p-4">
+          <div class="modal-header border-0 pb-0 justify-content-between align-items-center">
+            <h4 class="font-raleway fw-bold m-0 text-dark-main">Secure Checkout</h4>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body pt-4">
+            <p class="text-center font-inter text-muted small mb-4">Total Amount to Pay: <strong class="fs-5 text-dark-main">BDT <span id="payment-total-amount">0</span></strong></p>
+
+            <ul class="nav nav-pills mb-4 justify-content-center gap-2" id="pills-tab" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active rounded-pill px-4" id="pills-card-tab" data-bs-toggle="pill" data-bs-target="#pills-card" type="button" role="tab">Card</button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link rounded-pill px-4" id="pills-bkash-tab" data-bs-toggle="pill" data-bs-target="#pills-bkash" type="button" role="tab">bKash</button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link rounded-pill px-4" id="pills-nagad-tab" data-bs-toggle="pill" data-bs-target="#pills-nagad" type="button" role="tab">Nagad</button>
+              </li>
+            </ul>
+
+            <div class="tab-content" id="pills-tabContent">
+              <div class="tab-pane fade show active" id="pills-card" role="tabpanel">
+                <form id="paymentFormCard">
+                  <div class="mb-3">
+                    <label class="form-label font-inter small fw-bold">Card Number</label>
+                    <input type="text" class="form-control custom-select shadow-sm font-inter" placeholder="XXXX XXXX XXXX XXXX" required pattern="[0-9]{16}">
+                  </div>
+                  <div class="row">
+                    <div class="col-6 mb-3">
+                      <label class="form-label font-inter small fw-bold">Expiry</label>
+                      <input type="text" class="form-control custom-select shadow-sm font-inter" placeholder="MM/YY" required>
+                    </div>
+                    <div class="col-6 mb-3">
+                      <label class="form-label font-inter small fw-bold">CVC</label>
+                      <input type="text" class="form-control custom-select shadow-sm font-inter" placeholder="123" required pattern="[0-9]{3,4}">
+                    </div>
+                  </div>
+                  <button type="submit" class="btn payment-submit-btn bg-primary-green text-white w-100 font-raleway fw-bold py-3 mt-2 rounded-8 hover-lift shadow-sm">Pay Now</button>
+                </form>
+              </div>
+
+              <div class="tab-pane fade" id="pills-bkash" role="tabpanel">
+                <form id="paymentFormBkash">
+                  <div class="text-center mb-4">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/BKash_Logo.svg/512px-BKash_Logo.svg.png" alt="bKash" style="height: 40px;" onerror="this.outerHTML='<span class=\'fw-bold\' style=\'color:#e2136e;font-size:24px;\'>bKash Payment</span>'">
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label font-inter small fw-bold">bKash Account Number</label>
+                    <input type="tel" class="form-control custom-select shadow-sm font-inter" placeholder="01XXXXXXXXX" required pattern="01[0-9]{9}">
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label font-inter small fw-bold">PIN</label>
+                    <input type="password" class="form-control custom-select shadow-sm font-inter" placeholder="Enter PIN" required>
+                  </div>
+                  <button type="submit" class="btn payment-submit-btn text-white w-100 font-raleway fw-bold py-3 mt-2 rounded-8 hover-lift shadow-sm" style="background-color: #E2136E;">Pay with bKash</button>
+                </form>
+              </div>
+
+              <div class="tab-pane fade" id="pills-nagad" role="tabpanel">
+                <form id="paymentFormNagad">
+                  <div class="text-center mb-4">
+                    <img src="https://download.logo.wine/logo/nagad/nagad-logo.png" alt="Nagad" style="height: 50px;" onerror="this.outerHTML='<span class=\'fw-bold\' style=\'color:#f37021;font-size:24px;\'>Nagad Payment</span>'">
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label font-inter small fw-bold">Nagad Account Number</label>
+                    <input type="tel" class="form-control custom-select shadow-sm font-inter" placeholder="01XXXXXXXXX" required pattern="01[0-9]{9}">
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label font-inter small fw-bold">PIN</label>
+                    <input type="password" class="form-control custom-select shadow-sm font-inter" placeholder="Enter PIN" required>
+                  </div>
+                  <button type="submit" class="btn payment-submit-btn text-white w-100 font-raleway fw-bold py-3 mt-2 rounded-8 hover-lift shadow-sm" style="background-color: #F37021;">Pay with Nagad</button>
+                </form>
+              </div>
             </div>
 
-            <div id="search-results-container" class="overflow-auto" style="max-height: 300px">
-              <div class="text-center text-muted font-inter py-4" id="search-placeholder">
-                <img src="images/bus-icon.png" alt="bus" style="opacity: 0.2; width: 40px" class="mb-2" />
-                <p>Type a location to start planning your journey.</p>
-              </div>
-              <ul id="search-results-list" class="list-unstyled m-0"></ul>
-            </div>
           </div>
         </div>
       </div>
@@ -814,13 +913,16 @@
             <img class="mx-auto mb-4" style="width: 80px" src="images/success.png" alt="Success" />
             <h3 class="font-roboto fw-bold fs-3 mb-3 text-success">SUCCESS!</h3>
             <p class="font-roboto fs-5 fw-medium text-secondary mb-3">
-              Thank you for Booking Our Bus Seats. <br />
-              Your digital ticket is available in the cart menu!
+              Payment Complete. Thank you for Booking with NexTrip!
             </p>
-            <p class="font-roboto fs-6 fw-light text-secondary mb-4">
+            <p class="font-roboto fs-6 fw-light text-secondary mb-4" id="success-email-text">
               Shortly you will find a confirmation in your email.
             </p>
-            <button type="button" id="viewTicketBtn" class="btn bg-primary-green text-white rounded-pill px-5 py-2 fs-5 modal-btn shadow hover-lift">View Ticket</button>
+            <div class="d-flex justify-content-center gap-3 flex-wrap">
+              <button type="button" id="viewTicketBtn" class="btn btn-outline-success rounded-pill px-4 py-2 fs-6 modal-btn shadow-sm hover-lift">View Ticket History</button>
+              
+              <button type="button" id="downloadTicketBtn" class="btn bg-primary-green text-white rounded-pill px-4 py-2 fs-6 modal-btn shadow-sm hover-lift">Download E-Tickets</button>
+            </div>
           </div>
         </div>
       </div>
@@ -832,6 +934,7 @@
         <button type="button" class="btn-close shadow-none" data-bs-dismiss="offcanvas" aria-label="Close"></button>
       </div>
       <div class="offcanvas-body d-flex flex-column p-0 bg-light-gray">
+        
         <div id="cart-empty-state" class="text-center my-auto p-4 bg-white h-100 d-flex flex-column justify-content-center">
           <img src="images/bus-icon.png" style="width: 60px; opacity: 0.2" class="mb-3 mx-auto" />
           <h5 class="font-raleway fw-bold text-dark-muted">No seats selected</h5>
@@ -855,70 +958,36 @@
               <span class="font-inter text-dark-muted">Estimated Total:</span>
               <span class="font-raleway fs-4 fw-bold text-dark-main">BDT <span id="cart-total">0</span></span>
             </div>
-            <button class="btn next-btn w-100 shadow-sm hover-lift" data-bs-dismiss="offcanvas" onclick="document.getElementById('passengerForm').scrollIntoView({ behavior: 'smooth', block: 'center' }); document.getElementById('passName').focus();">Continue to Checkout</button>
+            <button class="btn next-btn w-100 shadow-sm hover-lift" data-bs-dismiss="offcanvas" onclick="document.getElementById('passengerForm').scrollIntoView({ behavior: 'smooth', block: 'center' }); document.getElementById('passName').focus();">Continue</button>
           </div>
         </div>
 
         <div id="cart-invoice-state" class="d-none flex-grow-1 flex-column h-100 bg-white">
-          <div class="p-4 flex-grow-1 overflow-auto">
-            <div class="text-center mb-4 pt-3">
-              <div class="d-inline-flex align-items-center justify-content-center bg-success bg-opacity-10 text-success rounded-circle mb-3" style="width: 60px; height: 60px">
-                <svg width="30" height="30" fill="currentColor" viewBox="0 0 16 16">
-                  <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425a.247.247 0 0 1 .02-.022Z"/>
-                </svg>
+          <div class="p-4 flex-grow-1 overflow-auto" id="ticket-history-container">
               </div>
-              <h4 class="font-raleway fw-bold text-dark-main">Booking Confirmed</h4>
-              <p class="font-inter small text-muted">Your journey is set. Here is your digital ticket.</p>
-            </div>
-
-            <div id="ticket-visual-only" class="ticket-invoice-card border border-dashed border-2 border-secondary border-opacity-25 rounded-12 p-4 bg-light-gray position-relative overflow-hidden shadow-sm">
-              <div class="invoice-cutout-left position-absolute bg-white rounded-circle"></div>
-              <div class="invoice-cutout-right position-absolute bg-white rounded-circle"></div>
-              
-              <h6 class="font-raleway fw-bold text-dark-main mb-3 border-bottom border-dashed pb-2">Passenger Details</h6>
-              <div class="mb-3">
-                <p class="font-inter small text-muted m-0">Name</p>
-                <p class="font-inter fw-bold text-dark-main m-0 text-truncate" id="invoice-name">--</p>
-              </div>
-              
-              <div class="d-flex flex-column flex-sm-row justify-content-between mb-3 gap-1">
-                <div class="w-100 pe-sm-2">
-                  <p class="font-inter small text-muted m-0">Phone</p>
-                  <p class="font-inter fw-bold text-dark-main m-0 text-truncate" id="invoice-phone">--</p>
-                </div>
-                <div class="w-100 text-sm-end ps-sm-2 mt-2 mt-sm-0">
-                  <p class="font-inter small text-muted m-0">Email</p>
-                  <p class="font-inter fw-bold text-dark-main m-0 text-truncate" id="invoice-email">--</p>
-                </div>
-              </div>
-
-              <h6 class="font-raleway fw-bold text-dark-main mb-3 border-bottom border-dashed pb-2 pt-2">Trip Details</h6>
-              
-              <div class="d-flex flex-column flex-sm-row justify-content-between mb-3 gap-1">
-                <div class="w-100 pe-sm-2">
-                  <p class="font-inter small text-muted m-0">Route</p>
-                  <p class="font-inter fw-bold text-primary-green m-0" id="invoice-route">--</p>
-                </div>
-                <div class="w-100 text-sm-end ps-sm-2 mt-2 mt-sm-0">
-                  <p class="font-inter small text-muted m-0">Date & Time</p>
-                  <p class="font-inter fw-bold text-dark-main m-0"><span id="invoice-date">--</span>, <br /><span id="invoice-time">--</span></p>
-                </div>
-              </div>
-              
-              <div class="d-flex flex-column flex-sm-row justify-content-between mb-3 gap-1">
-                <div class="w-100 pe-sm-2">
-                  <p class="font-inter small text-muted m-0">Seats</p>
-                  <p class="font-inter fw-bold text-dark-main m-0" id="invoice-seats">--</p>
-                </div>
-                <div class="w-100 text-sm-end ps-sm-2 mt-2 mt-sm-0">
-                  <p class="font-inter small text-muted m-0">Amount Paid</p>
-                  <p class="font-inter fw-bold text-dark-main m-0">BDT <span id="invoice-total">0</span></p>
-                </div>
-              </div>
-            </div>
-          </div>
           <div class="p-4 bg-white mt-auto text-center border-top">
-            <button id="invoiceDoneBtn" class="btn btn-outline-success font-inter fw-bold rounded-pill px-5 w-100" data-bs-dismiss="offcanvas">Done</button>
+            <button id="invoiceDoneBtn" class="btn btn-outline-success font-inter fw-bold rounded-pill px-5 w-100" data-bs-dismiss="offcanvas">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="searchModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-4 border-0 shadow-lg" style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);">
+          <div class="modal-body p-4">
+            <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+              <input type="text" id="global-search-input" class="form-control border-0 fs-4 font-inter shadow-none bg-transparent" placeholder="Search for districts or divisions (e.g., Sylhet, Bogura)..." autocomplete="off" />
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div id="search-results-container" class="overflow-auto" style="max-height: 300px">
+              <div class="text-center text-muted font-inter py-4" id="search-placeholder">
+                <img src="images/bus-icon.png" alt="bus" style="opacity: 0.2; width: 40px" class="mb-2" />
+                <p>Type a location to start planning your journey.</p>
+              </div>
+              <ul id="search-results-list" class="list-unstyled m-0"></ul>
+            </div>
           </div>
         </div>
       </div>
@@ -936,6 +1005,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+    
     <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
