@@ -1,6 +1,5 @@
-// ==========================================
-// 1. DATA & STATE (The "Brain")
-// ==========================================
+// DATA & STATE (The "Brain")
+
 const API = {
     divisions: {
         Dhaka: ["Dhaka", "Faridpur", "Gazipur", "Kishoreganj", "Madaripur", "Manikganj", "Munshiganj", "Narayanganj", "Narsingdi", "Rajbari", "Shariatpur", "Tangail"],
@@ -406,9 +405,8 @@ window.showToast = function(msg, isError = false) {
     new bootstrap.Toast(toastEl).show();
 }
 
-// ==========================================
 // 4. EVENT LISTENERS
-// ==========================================
+
 if(els.origDiv) {
     els.origDiv.addEventListener("change", () => handleLocationChange(els.origDiv, els.origDist));
     els.destDiv.addEventListener("change", () => handleLocationChange(els.destDiv, els.destDist));
@@ -489,7 +487,7 @@ function finalizeBooking() {
     // Store the seats to push to DB
     const seatsToBook = [...state.selectedSeats];
 
-    // FIX: Nuke Local Cart BEFORE talking to DB to prevent the "Ghost Green" race condition
+    //  Nuke Local Cart BEFORE talking to DB to prevent the "Ghost Green" race condition
     state.selectedSeats = [];
     
     // Add to history
@@ -530,7 +528,7 @@ function finalizeBooking() {
     }, 500);
 }
 
-// === TICKET HISTORY TABS ===
+// TICKET HISTORY TABS
 function renderTicketHistory() {
     $("cart-empty-state").classList.add("d-none");
     $("cart-filled-state").classList.add("d-none");
@@ -636,7 +634,7 @@ function renderTicketHistory() {
     `;
 }
 
-// === FIX: THE PURE OFFLINE E-TICKET BLOB GENERATOR ===
+// THE PURE OFFLINE E-TICKET BLOB GENERATOR 
 const downloadTicketBtn = $("downloadTicketBtn");
 if (downloadTicketBtn) {
     downloadTicketBtn.addEventListener("click", () => {
