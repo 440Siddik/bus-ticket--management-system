@@ -44,7 +44,7 @@
           background-color: #ff4c4c !important;
       }
 
-      /* FIX: Unmistakable Booked Seat Styling */
+      /* Booked Seat Styling */
       .booked-seat {
           background-color: #9ca3af !important;
           border-color: #9ca3af !important;
@@ -144,17 +144,12 @@
 
       <header>
         <nav class="navbar navbar-expand-lg fixed-top glass-nav py-3 transition-all" id="mainNav">
-          <div class="container">
-            <button class="navbar-toggler border-0 px-0 shadow-none d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h8m-8 6h16" />
-              </svg>
-            </button>
+          <div class="container d-flex flex-wrap align-items-center justify-content-between">
+            
+            <a class="navbar-brand fw-bolder fs-3 fs-lg-1 font-raleway text-dark-main m-0" href="#">Nex<span class="text-primary-green">T</span>rip</a>
 
-            <a class="navbar-brand fw-bolder fs-2 fs-lg-1 font-raleway text-dark-main m-0" href="#">Nex<span class="text-primary-green">T</span>rip</a>
-
-            <div class="collapse navbar-collapse justify-content-center" id="navbarNav">
-              <ul class="navbar-nav gap-2 gap-lg-4 text-center mt-3 mt-lg-0">
+            <div class="collapse navbar-collapse justify-content-center order-3 order-lg-2 mt-3 mt-lg-0" id="navbarNav">
+              <ul class="navbar-nav gap-2 gap-lg-4 text-center">
                 <li class="nav-item"><a class="nav-link text-dark-muted font-raleway hover-primary" href="#">Home</a></li>
                 <li class="nav-item"><a class="nav-link text-dark-muted font-raleway hover-primary" href="#contact-area">Contact</a></li>
                 <li class="nav-item"><a class="nav-link text-dark-muted font-raleway hover-primary" href="#paribahan-are">Destination</a></li>
@@ -170,15 +165,24 @@
               </ul>
             </div>
 
-            <div class="d-none d-lg-flex align-items-center">
-              <button id="nav-auth-btn" class="btn btn-outline-success font-raleway fw-bold rounded-12 px-4 py-2 me-3" style="display:none;">
+            <div class="d-flex align-items-center gap-2 gap-sm-3 order-2 order-lg-3 ms-auto ms-lg-0">
+              <button id="nav-auth-btn" class="btn btn-outline-success font-raleway fw-bold rounded-12 px-3 py-2 px-lg-4 py-lg-2" style="display:none; font-size: 0.9rem;">
                 Logout
               </button>
-              <button class="btn bg-primary-light text-primary-green fw-bold font-raleway rounded-12 px-4 py-3 d-flex align-items-center border-0 hover-lift position-relative" type="button" data-bs-toggle="offcanvas" data-bs-target="#ticketCartOffcanvas" aria-controls="ticketCartOffcanvas">
-                Bus <img class="ms-2" src="images/bus-icon.png" alt="" />
+              
+              <button class="btn bg-primary-light text-primary-green fw-bold font-raleway rounded-12 px-2 px-sm-3 py-2 py-lg-3 d-flex align-items-center border-0 hover-lift position-relative" type="button" data-bs-toggle="offcanvas" data-bs-target="#ticketCartOffcanvas" aria-controls="ticketCartOffcanvas">
+                <span class="d-none d-sm-inline me-2">Bus</span>
+                <img src="images/bus-icon.png" alt="" style="width: 20px;" />
                 <span id="nav-cart-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none animation-pop">0</span>
               </button>
+              
+              <button class="navbar-toggler border-0 px-1 shadow-none d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h8m-8 6h16" />
+                </svg>
+              </button>
             </div>
+
           </div>
         </nav>
       </header>
@@ -784,6 +788,12 @@
           <div class="modal-body">
             <p class="text-center text-muted small mb-4">Please register or log in to unlock NexTrip.</p>
             <form id="authForm">
+              
+              <div class="mb-3" id="authNameContainer">
+                <label class="form-label font-inter small fw-bold">Username</label>
+                <input type="text" id="authName" class="form-control custom-select shadow-sm font-inter" required>
+              </div>
+              
               <div class="mb-3">
                 <label class="form-label font-inter small fw-bold">Email</label>
                 <input type="email" id="authEmail" class="form-control custom-select shadow-sm font-inter" required>
@@ -918,8 +928,6 @@
             </p>
             <div class="d-flex justify-content-center gap-3 flex-wrap">
               <button type="button" id="viewTicketBtn" class="btn btn-outline-success rounded-pill px-4 py-2 fs-6 modal-btn shadow-sm hover-lift">View Ticket History</button>
-              
-              <button type="button" id="downloadTicketBtn" class="btn bg-primary-green text-white rounded-pill px-4 py-2 fs-6 modal-btn shadow-sm hover-lift">Download E-Tickets</button>
             </div>
           </div>
         </div>

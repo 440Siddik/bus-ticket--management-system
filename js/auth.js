@@ -12,10 +12,12 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const googleProvider = new firebase.auth.GoogleAuthProvider();
 
-let isLoginMode = false; 
+let isLoginMode = false; // Starts on Register mode
 window.isUserLoggedIn = false; 
 
 const authForm = document.getElementById("authForm");
+const authNameContainer = document.getElementById("authNameContainer"); // Targeted the new container
+const authName = document.getElementById("authName"); 
 const authEmail = document.getElementById("authEmail");
 const authPassword = document.getElementById("authPassword");
 const authSubmitBtn = document.getElementById("authSubmitBtn");
@@ -34,6 +36,12 @@ authToggleBtn.addEventListener("click", (e) => {
     authToggleText.innerText = isLoginMode ? "Don't have an account?" : "Already have an account?";
     authToggleBtn.innerText = isLoginMode ? "Register" : "Login here";
     
+    // Toggles the Username field dynamically
+    if (authNameContainer && authName) {
+        authNameContainer.style.display = isLoginMode ? "none" : "block";
+        authName.required = !isLoginMode;
+    }
+    
     if (forgotPasswordBtn) {
         forgotPasswordBtn.style.display = isLoginMode ? "block" : "none";
     }
@@ -43,6 +51,7 @@ authForm.addEventListener("submit", (e) => {
     e.preventDefault();
     const email = authEmail.value;
     const password = authPassword.value;
+    const username = authName ? authName.value.trim() : "";
 
     const originalBtnText = authSubmitBtn.innerText;
     authSubmitBtn.innerText = "Processing...";
@@ -50,9 +59,9 @@ authForm.addEventListener("submit", (e) => {
 
     if (isLoginMode) {
         auth.signInWithEmailAndPassword(email, password)
-            .then(() => {
+            .then((result) => {
                 authForm.reset();
-                if(window.showToast) window.showToast("Logged in successfully!");
+                if(window.showToast) window.showToast(`Welcome back, ${result.user.displayName || 'User'}!`);
             })
             .catch((error) => {
                 if(window.showToast) window.showToast(error.message.replace("Firebase: ", ""), true);
@@ -63,9 +72,14 @@ authForm.addEventListener("submit", (e) => {
             });
     } else {
         auth.createUserWithEmailAndPassword(email, password)
-            .then(() => {
-                authForm.reset();
-                if(window.showToast) window.showToast("Registered successfully! Welcome to NexTrip.");
+            .then((result) => {
+                // Injects the custom Username into their permanent Firebase profile
+                return result.user.updateProfile({
+                    displayName: username
+                }).then(() => {
+                    authForm.reset();
+                    if(window.showToast) window.showToast(`Welcome, ${username}! Your account is set up.`);
+                });
             })
             .catch((error) => {
                 if(window.showToast) window.showToast(error.message.replace("Firebase: ", ""), true);
@@ -127,12 +141,10 @@ auth.onAuthStateChanged((user) => {
         
         authModalInstance.hide();
         
-        // INSTANT SCROLL RESTORE
         document.body.style.cssText = ''; 
         document.documentElement.style.cssText = '';
         document.body.classList.remove("modal-open");
         
-        // NUCLEAR BACKUP SCROLL RESTORE (Kills Bootstrap's lingering locks)
         setTimeout(() => {
             document.body.style.cssText = ''; 
             document.documentElement.style.cssText = '';
@@ -142,7 +154,7 @@ auth.onAuthStateChanged((user) => {
 
         navAuthBtn.innerText = "Logout";
         navAuthBtn.classList.remove("btn-outline-success");
-        navAuthBtn.classList.add("btn-custom-logout"); // FIX: Custom elegant matte red class
+        navAuthBtn.classList.add("btn-custom-logout"); 
         navAuthBtn.style.display = "block";
         navAuthBtn.onclick = () => {
             auth.signOut().then(() => { window.location.reload(); });
