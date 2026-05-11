@@ -1,3 +1,6 @@
+// ==========================================
+// 1. DATA & STATE (The "Brain")
+// ==========================================
 const API = {
     divisions: {
         Dhaka: ["Dhaka", "Faridpur", "Gazipur", "Kishoreganj", "Madaripur", "Manikganj", "Munshiganj", "Narayanganj", "Narsingdi", "Rajbari", "Shariatpur", "Tangail"],
@@ -403,8 +406,9 @@ window.showToast = function(msg, isError = false) {
     new bootstrap.Toast(toastEl).show();
 }
 
+// ==========================================
 // 4. EVENT LISTENERS
-
+// ==========================================
 if(els.origDiv) {
     els.origDiv.addEventListener("change", () => handleLocationChange(els.origDiv, els.origDist));
     els.destDiv.addEventListener("change", () => handleLocationChange(els.destDiv, els.destDist));
@@ -483,6 +487,7 @@ function finalizeBooking() {
 
     const seatsToBook = [...state.selectedSeats];
 
+    // Nuke Local Cart BEFORE talking to DB to prevent the "Ghost Green" race condition
     state.selectedSeats = [];
     
     state.bookingHistory.unshift(newTicket);
@@ -521,7 +526,7 @@ function finalizeBooking() {
     }, 500);
 }
 
-//TICKET HISTORY TABS
+// TICKET HISTORY TABS
 function renderTicketHistory() {
     $("cart-empty-state").classList.add("d-none");
     $("cart-filled-state").classList.add("d-none");
@@ -627,11 +632,10 @@ function renderTicketHistory() {
     `;
 }
 
-
-// PURE MULTI-PAGE OFFLINE NATIVE PDF ENGINE ===
-const downloadTicketBtn = $("downloadTicketBtn");
-if (downloadTicketBtn) {
-    downloadTicketBtn.addEventListener("click", () => {
+// === FIX: PURE MULTI-PAGE OFFLINE NATIVE PDF ENGINE ===
+const downloadPdfBtn = $("downloadPdfBtn");
+if (downloadPdfBtn) {
+    downloadPdfBtn.addEventListener("click", () => {
         if (!window.jspdf) {
             window.showToast("PDF Engine failed to load. Please check your connection.", true);
             return;
@@ -714,7 +718,7 @@ if (downloadTicketBtn) {
 
         // Natively prompts physical download of PDF
         doc.save(`NexTrip_Tickets_${ticketInfo.name.replace(/\s+/g, '_')}.pdf`);
-        window.showToast("E-Tickets downloaded securely!", false);
+        window.showToast("PDF Tickets downloaded securely!", false);
     });
 }
 
@@ -729,32 +733,14 @@ if (viewTicketBtn) {
             let offcanvas = bootstrap.Offcanvas.getInstance(offcanvasEl);
             if (!offcanvas) offcanvas = new bootstrap.Offcanvas(offcanvasEl);
             offcanvas.show();
-            updateMiniCart(); 
         }, 300);
     });
 }
 
 const ticketCartOffcanvas = $("ticketCartOffcanvas");
 if (ticketCartOffcanvas) {
-    ticketCartOffcanvas.addEventListener('hidden.bs.offcanvas', () => {
-        if (!$("cart-invoice-state").classList.contains("d-none")) {
-            $("cart-invoice-state").classList.add("d-none");
-            $("cart-invoice-state").classList.remove("d-flex");
-            $("cart-empty-state").classList.remove("d-none");
-
-            const badge = $("nav-cart-badge");
-            badge.classList.add("d-none");
-            badge.innerText = "0";
-            
-            state.selectedSeats = [];
-            state.appliedCoupon = null;
-            $("ticket-count").innerText = 0;
-            $("total-price").innerText = 0;
-            $("grand-total").innerText = 0;
-            $("selected-seat-num").innerHTML = "";
-            
-            listenToRouteSeats(); 
-        }
+    ticketCartOffcanvas.addEventListener('show.bs.offcanvas', () => {
+        updateMiniCart();
     });
 }
 
