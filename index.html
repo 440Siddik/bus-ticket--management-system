@@ -44,7 +44,7 @@
           background-color: #ff4c4c !important;
       }
 
-      /* Booked Seat Styling */
+      /* Unmistakable Booked Seat Styling */
       .booked-seat {
           background-color: #9ca3af !important;
           border-color: #9ca3af !important;
@@ -419,6 +419,9 @@
                     </div>
                     <div class="btn btn-light bg-white font-inter text-dark-muted flex-grow-1 shadow-sm pe-none">
                       Est. Distance - <span id="display-distance">--</span> km
+                    </div>
+                    <div class="btn btn-light bg-white font-inter text-dark-muted flex-grow-1 shadow-sm pe-none">
+                      Est. Time - <span id="display-duration">--</span>
                     </div>
                   </div>
                 </div>
@@ -877,7 +880,7 @@
               <div class="tab-pane fade" id="pills-bkash" role="tabpanel">
                 <form id="paymentFormBkash">
                   <div class="text-center mb-4">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/BKash_Logo.svg/512px-BKash_Logo.svg.png" alt="bKash" style="height: 40px;" onerror="this.outerHTML='<span class=\'fw-bold\' style=\'color:#e2136e;font-size:24px;\'>bKash Payment</span>'">
+                    <img src="images/bKash-App-Logo-.webp" alt="bKash" style="height: 40px; object-fit: contain;">
                   </div>
                   <div class="mb-3">
                     <label class="form-label font-inter small fw-bold">bKash Account Number</label>
@@ -894,7 +897,7 @@
               <div class="tab-pane fade" id="pills-nagad" role="tabpanel">
                 <form id="paymentFormNagad">
                   <div class="text-center mb-4">
-                    <img src="https://download.logo.wine/logo/nagad/nagad-logo.png" alt="Nagad" style="height: 50px;" onerror="this.outerHTML='<span class=\'fw-bold\' style=\'color:#f37021;font-size:24px;\'>Nagad Payment</span>'">
+                    <img src="images/nagad-1.webp" alt="Nagad" style="height: 50px; object-fit: contain;">
                   </div>
                   <div class="mb-3">
                     <label class="form-label font-inter small fw-bold">Nagad Account Number</label>
@@ -928,6 +931,8 @@
             </p>
             <div class="d-flex justify-content-center gap-3 flex-wrap">
               <button type="button" id="viewTicketBtn" class="btn btn-outline-success rounded-pill px-4 py-2 fs-6 modal-btn shadow-sm hover-lift">View Ticket History</button>
+              
+              <button type="button" id="downloadTicketBtn" class="btn bg-primary-green text-white rounded-pill px-4 py-2 fs-6 modal-btn shadow-sm hover-lift">Download E-Tickets</button>
             </div>
           </div>
         </div>
@@ -1015,6 +1020,8 @@
     <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
     <script src="js/auth.js"></script>
     <script src="js/map.js"></script>

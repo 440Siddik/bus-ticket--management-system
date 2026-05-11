@@ -1,5 +1,3 @@
-// DATA & STATE (The "Brain")
-
 const API = {
     divisions: {
         Dhaka: ["Dhaka", "Faridpur", "Gazipur", "Kishoreganj", "Madaripur", "Manikganj", "Munshiganj", "Narayanganj", "Narsingdi", "Rajbari", "Shariatpur", "Tangail"],
@@ -471,7 +469,6 @@ if($("paymentFormBkash")) $("paymentFormBkash").addEventListener("submit", proce
 if($("paymentFormNagad")) $("paymentFormNagad").addEventListener("submit", processPayment);
 
 function finalizeBooking() {
-    // Collect the ticket data
     const newTicket = {
         name: $("passName").value,
         phone: $("phoneNumber").value,
@@ -484,16 +481,12 @@ function finalizeBooking() {
         timestamp: new Date().toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', month: 'short', day: 'numeric', year: 'numeric' })
     };
 
-    // Store the seats to push to DB
     const seatsToBook = [...state.selectedSeats];
 
-    //  Nuke Local Cart BEFORE talking to DB to prevent the "Ghost Green" race condition
     state.selectedSeats = [];
     
-    // Add to history
     state.bookingHistory.unshift(newTicket);
 
-    // Tell Firebase to permanently lock them
     if (dbSeatsRef && seatsToBook.length > 0) {
         seatsToBook.forEach(seatId => {
             clearTimeout(lockTimers[seatId]); 
@@ -528,7 +521,7 @@ function finalizeBooking() {
     }, 500);
 }
 
-// TICKET HISTORY TABS
+//TICKET HISTORY TABS
 function renderTicketHistory() {
     $("cart-empty-state").classList.add("d-none");
     $("cart-filled-state").classList.add("d-none");
@@ -634,76 +627,93 @@ function renderTicketHistory() {
     `;
 }
 
-// THE PURE OFFLINE E-TICKET BLOB GENERATOR 
+
+// PURE MULTI-PAGE OFFLINE NATIVE PDF ENGINE ===
 const downloadTicketBtn = $("downloadTicketBtn");
 if (downloadTicketBtn) {
     downloadTicketBtn.addEventListener("click", () => {
-        // Find the latest ticket
+        if (!window.jspdf) {
+            window.showToast("PDF Engine failed to load. Please check your connection.", true);
+            return;
+        }
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
         if (state.bookingHistory.length === 0) return;
         const ticketInfo = state.bookingHistory[0];
-        
+
         const amountPerTicket = (ticketInfo.total / ticketInfo.seats.length).toFixed(2);
         
-        let ticketsHtml = '';
         ticketInfo.seats.forEach((seatNum, index) => {
-            ticketsHtml += `
-            <div class="ticket">
-                <div class="header">NexTrip Digital Ticket</div>
-                <div class="details">
-                    <p><strong>Passenger:</strong> ${ticketInfo.name}</p>
-                    <p><strong>Phone:</strong> ${ticketInfo.phone}</p>
-                    <p><strong>Route:</strong> ${ticketInfo.route}</p>
-                    <p><strong>Date & Time:</strong> ${ticketInfo.date} at ${ticketInfo.time}</p>
-                    <h2 class="seat-badge">Seat: ${seatNum}</h2>
-                    <p class="price">Amount Paid: BDT ${amountPerTicket}</p>
-                </div>
-                <div class="footer">Ticket ${index + 1} of ${ticketInfo.seats.length} - Scan code upon boarding</div>
-            </div>`;
+            if (index > 0) doc.addPage();
+            
+            // Outer dashed border
+            doc.setDrawColor(0, 0, 0);
+            doc.setLineWidth(0.5);
+            doc.setLineDashPattern([3, 3], 0);
+            doc.rect(20, 30, 170, 200);
+
+            doc.setLineDashPattern([], 0); // Reset dash
+
+            // Title
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(28);
+            doc.setTextColor(200, 200, 200); 
+            doc.text("NEXTRIP DIGITAL TICKET", 105, 55, null, null, "center");
+
+            // Details
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(14);
+            
+            doc.setFont("helvetica", "bold");
+            doc.text("Passenger:", 35, 90);
+            doc.setFont("helvetica", "normal");
+            doc.text(ticketInfo.name, 80, 90);
+
+            doc.setDrawColor(220, 220, 220);
+            doc.line(35, 95, 175, 95);
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Phone:", 35, 105);
+            doc.setFont("helvetica", "normal");
+            doc.text(ticketInfo.phone, 80, 105);
+            
+            doc.line(35, 110, 175, 110);
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Route:", 35, 120);
+            doc.setFont("helvetica", "normal");
+            doc.text(ticketInfo.route, 80, 120);
+
+            doc.line(35, 125, 175, 125);
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Date & Time:", 35, 135);
+            doc.setFont("helvetica", "normal");
+            doc.text(`${ticketInfo.date} at ${ticketInfo.time}`, 80, 135);
+
+            doc.line(35, 140, 175, 140);
+
+            // Seat Number Output
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(30);
+            doc.setTextColor(150, 150, 150);
+            doc.text(`Seat: ${seatNum}`, 105, 170, null, null, "center");
+
+            // Amount Paid
+            doc.setFontSize(20);
+            doc.setTextColor(29, 209, 0); 
+            doc.text(`Amount Paid: BDT ${amountPerTicket}`, 105, 195, null, null, "center");
+
+            // Footer Note
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            doc.text(`Ticket ${index + 1} of ${ticketInfo.seats.length} - Scan code upon boarding`, 105, 220, null, null, "center");
         });
 
-        // Generates native HTML file instantly to avoid external dependencies
-        const fullHtml = `
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <title>NexTrip Tickets - ${ticketInfo.name}</title>
-            <style>
-                body { font-family: 'Arial', sans-serif; background: #e5e5e5; padding: 40px; display: flex; flex-direction: column; align-items: center; gap: 30px; margin: 0; }
-                .ticket { background: #fff; width: 100%; max-width: 500px; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 2px dashed #d1d1d1; page-break-inside: avoid; }
-                .header { background: #1dd100; color: #fff; padding: 25px; text-align: center; font-size: 26px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
-                .details { padding: 30px; }
-                .details p { margin: 12px 0; color: #444; font-size: 16px; border-bottom: 1px solid #f0f0f0; padding-bottom: 8px; }
-                .details p strong { color: #111; display: inline-block; width: 120px; }
-                .seat-badge { background: #e2136e; color: #fff; padding: 15px; text-align: center; border-radius: 8px; margin: 25px 0; font-size: 28px; font-weight: 900; letter-spacing: 2px; }
-                .price { font-size: 22px !important; font-weight: bold; color: #1dd100 !important; text-align: right; margin-top: 20px !important; border: none !important; }
-                .footer { background: #f9f9f9; text-align: center; padding: 15px; font-size: 14px; color: #888; font-weight: bold; }
-                @media print {
-                    body { background: #fff; padding: 0; gap: 0; }
-                    .ticket { box-shadow: none; border: 2px dashed #000; margin-bottom: 40px; page-break-after: always; }
-                }
-            </style>
-        </head>
-        <body>
-            ${ticketsHtml}
-            <script>
-                // Auto-open print dialog to save as PDF physically
-                window.onload = () => setTimeout(() => window.print(), 500);
-            </script>
-        </body>
-        </html>
-        `;
-
-        const blob = new Blob([fullHtml], { type: 'text/html' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `NexTrip_Tickets_${ticketInfo.name.replace(/\s+/g, '_')}.html`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        
+        // Natively prompts physical download of PDF
+        doc.save(`NexTrip_Tickets_${ticketInfo.name.replace(/\s+/g, '_')}.pdf`);
         window.showToast("E-Tickets downloaded securely!", false);
     });
 }
