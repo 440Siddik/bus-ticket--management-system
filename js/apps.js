@@ -1,4 +1,4 @@
-// 1. DATA & STATE 
+// DATA & STATE 
 const API = {
     divisions: {
         Dhaka: ["Dhaka", "Faridpur", "Gazipur", "Kishoreganj", "Madaripur", "Manikganj", "Munshiganj", "Narayanganj", "Narsingdi", "Rajbari", "Shariatpur", "Tangail"],
@@ -186,18 +186,14 @@ function filterAvailableTimes() {
     }
 }
 
-// INTELLIGENT DISTRICT FILTER 
 function handleLocationChange(divEl, distEl) {
     const dists = API.divisions[divEl.value] || [];
     distEl.innerHTML = `<option value="" selected disabled>Select District...</option>`;
-    
     dists.sort().forEach(d => {
-        // Prevent user from selecting the exact same District as Division (e.g. Dhaka -> Dhaka)
         if (d !== divEl.value) {
             distEl.innerHTML += `<option value="${d}">${d}</option>`;
         }
     });
-    
     distEl.disabled = dists.length === 0 || distEl.options.length === 1;
     validateJourney();
 }
@@ -412,7 +408,7 @@ window.showToast = function(msg, isError = false) {
     new bootstrap.Toast(toastEl).show();
 }
 
-// 4. EVENT LISTENERS & CHECKOUT
+//  EVENT LISTENERS
 
 if(els.origDiv) {
     els.origDiv.addEventListener("change", () => handleLocationChange(els.origDiv, els.origDist));
@@ -430,6 +426,15 @@ if(els.origDiv) {
     els.applyBtn.addEventListener("click", () => {
         const code = $("coupon-code").value.trim().toUpperCase();
         if (!API.coupons[code]) return window.showToast("Invalid or expired coupon code.", true);
+        
+        // --- SECURE ONE-TIME USE CHECKER ---
+        const currentUser = typeof firebase !== 'undefined' ? firebase.auth().currentUser : null;
+        const uid = currentUser ? currentUser.uid : 'guest';
+        const usedCoupons = JSON.parse(localStorage.getItem(`usedCoupons_${uid}`) || "[]");
+
+        if (usedCoupons.includes(code)) {
+            return window.showToast("You have already used this coupon code!", true);
+        }
         
         state.appliedCoupon = code;
         
@@ -490,9 +495,22 @@ function finalizeBooking() {
         timestamp: new Date().toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', month: 'short', day: 'numeric', year: 'numeric' })
     };
 
+    // --- SECURELY BURN THE COUPON FOR THIS USER ---
+    if (state.appliedCoupon) {
+        const currentUser = typeof firebase !== 'undefined' ? firebase.auth().currentUser : null;
+        const uid = currentUser ? currentUser.uid : 'guest';
+        const usedCoupons = JSON.parse(localStorage.getItem(`usedCoupons_${uid}`) || "[]");
+        
+        if (!usedCoupons.includes(state.appliedCoupon)) {
+            usedCoupons.push(state.appliedCoupon);
+            localStorage.setItem(`usedCoupons_${uid}`, JSON.stringify(usedCoupons));
+        }
+    }
+
     const seatsToBook = [...state.selectedSeats];
 
     state.selectedSeats = [];
+    
     state.bookingHistory.unshift(newTicket);
 
     if (dbSeatsRef && seatsToBook.length > 0) {
@@ -522,6 +540,11 @@ function finalizeBooking() {
     els.passengerForm.reset();
     els.passengerForm.classList.remove("was-validated");
 
+    if($("paymentFormCard")) $("paymentFormCard").reset();
+    if($("paymentFormBkash")) $("paymentFormBkash").reset();
+    if($("paymentFormNagad")) $("paymentFormNagad").reset();
+    renderUI();
+
     renderTicketHistory();
 
     setTimeout(() => {
@@ -529,7 +552,6 @@ function finalizeBooking() {
     }, 500);
 }
 
-// INJECTED GLOBAL PDF DOWNLOAD API 
 window.downloadTicketPDF = function(index) {
     if (!window.jspdf) {
         window.showToast("PDF Engine failed to load. Please check your connection.", true);
@@ -609,7 +631,6 @@ window.downloadTicketPDF = function(index) {
     window.showToast("PDF Tickets downloaded securely!", false);
 };
 
-// Global click event for the Success Modal's Download button (Downloads the absolute latest)
 const downloadPdfBtn = $("downloadPdfBtn");
 if (downloadPdfBtn) {
     downloadPdfBtn.addEventListener("click", () => {
@@ -690,7 +711,6 @@ function renderTicketHistory() {
         pastTicketsHtml = `<p class="text-center text-muted small mt-4">No past bookings found.</p>`;
     } else {
         pastTickets.forEach((ticket, index) => {
-            // Index + 1 because index 0 in this loop is actually index 1 in the main bookingHistory array
             pastTicketsHtml += buildCard(ticket, state.bookingHistory.length - 1 - index, false, index + 1);
         });
     }
@@ -760,7 +780,6 @@ window.addEventListener("userLoggedOut", () => {
     $("nav-cart-badge").classList.add("d-none");
 });
 
-// SMART SEARCH ENGINE CONSTRAINT 
 const searchIndex = [];
 for (const [div, dists] of Object.entries(API.divisions)) {
     searchIndex.push({ name: div, type: "Division", parent: div });

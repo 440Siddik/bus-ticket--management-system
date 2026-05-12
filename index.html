@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
      <link rel="icon" type="image/x-icon" href="/images/logo.png">
+     <link rel="shortcut icon" href="images/bus-icon.png" type="image/x-icon">
     <title>NexTrip - Premium Ticket Booking</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -25,12 +26,16 @@
     <link rel="stylesheet" href="css/responsive.css" />
     
     <style>
-      /* ====================================================
-         UNIVERSAL RESPONSIVE ENGINE & UX POLISH
-         ==================================================== */
+      /*  UNIVERSAL RESPONSIVE ENGINE & UX POLISH */
          
       body {
           overflow-x: hidden;
+      }
+
+      /* Modern Section Spacing for gorgeous scroll animations */
+      .section-spacing {
+          margin-top: 130px;
+          margin-bottom: 80px;
       }
 
       input[type="text"], input[type="tel"], input[type="email"], input[type="date"], input[type="password"] {
@@ -46,7 +51,6 @@
           background-color: #ff4c4c !important;
       }
 
-      /* Unmistakable Booked Seat Styling */
       .booked-seat {
           background-color: #9ca3af !important;
           border-color: #9ca3af !important;
@@ -55,7 +59,6 @@
           pointer-events: none !important;
       }
 
-      /* Custom Tabs */
       .nav-pills .nav-link.active {
           background-color: var(--primary-green) !important;
           color: white !important;
@@ -102,6 +105,7 @@
           .banner-card { position: static !important; margin-top: 2rem !important; transform: none !important; }
       }
       @media (max-width: 768px) {
+          .section-spacing { margin-top: 80px; margin-bottom: 50px; }
           .reveal { opacity: 1 !important; transform: none !important; visibility: visible !important; transition: none !important; }
           #routeMap { height: 300px !important; }
           .banner-text h3 { font-size: 2rem !important; margin-bottom: 0.5rem; }
@@ -235,7 +239,7 @@
               </div>
             </div>
 
-            <div style="margin-top: 120px" class="reveal">
+            <div class="reveal section-spacing">
               <h3 class="text-center font-raleway display-6 fw-bold text-dark-main">Best offers for you</h3>
               
               <div class="row mt-5 gy-4">
@@ -275,7 +279,7 @@
             </div>
         </div> 
 
-        <div id="paribahan-are" class="paribahan-area border-top mt-5 bg-light-gray rounded-top-5 pt-5 pb-5 px-3 px-lg-0 reveal" style="margin-top: 150px !important">
+        <div id="paribahan-are" class="paribahan-area border-top bg-light-gray rounded-top-5 pt-5 pb-5 px-3 px-lg-0 reveal section-spacing">
           <div class="container mt-5">
             <h3 class="text-center font-raleway display-5 fw-bold text-dark-main mb-3">NexTrip Paribahan</h3>
             <p class="text-center font-inter text-dark-muted fs-6 mb-5">
@@ -668,7 +672,7 @@
           </div>
         </div>
 
-        <div id="contact-area" class="container mt-5 pt-5 pb-5 reveal">
+        <div id="contact-area" class="container reveal section-spacing">
           <div class="bg-white rounded-12 p-4 p-lg-5 shadow-sm border border-light">
             <div class="row gy-5">
               <div class="col-lg-5 pe-lg-5 border-dashed-custom">
@@ -860,19 +864,19 @@
 
             <div class="tab-content" id="pills-tabContent">
               <div class="tab-pane fade show active" id="pills-card" role="tabpanel">
-                <form id="paymentFormCard">
+                <form id="paymentFormCard" autocomplete="off">
                   <div class="mb-3">
                     <label class="form-label font-inter small fw-bold">Card Number</label>
-                    <input type="text" class="form-control custom-select shadow-sm font-inter" placeholder="XXXX XXXX XXXX XXXX" required pattern="[0-9]{16}">
+                    <input type="text" class="form-control custom-select shadow-sm font-inter" placeholder="XXXX XXXX XXXX XXXX" required pattern="[0-9]{16}" autocomplete="off">
                   </div>
                   <div class="row">
                     <div class="col-6 mb-3">
                       <label class="form-label font-inter small fw-bold">Expiry</label>
-                      <input type="text" class="form-control custom-select shadow-sm font-inter" placeholder="MM/YY" required>
+                      <input type="text" class="form-control custom-select shadow-sm font-inter" placeholder="MM/YY" required autocomplete="off">
                     </div>
                     <div class="col-6 mb-3">
                       <label class="form-label font-inter small fw-bold">CVC</label>
-                      <input type="text" class="form-control custom-select shadow-sm font-inter" placeholder="123" required pattern="[0-9]{3,4}">
+                      <input type="text" class="form-control custom-select shadow-sm font-inter" placeholder="123" required pattern="[0-9]{3,4}" autocomplete="off">
                     </div>
                   </div>
                   <button type="submit" class="btn payment-submit-btn bg-primary-green text-white w-100 font-raleway fw-bold py-3 mt-2 rounded-8 hover-lift shadow-sm">Pay Now</button>
@@ -880,34 +884,34 @@
               </div>
 
               <div class="tab-pane fade" id="pills-bkash" role="tabpanel">
-                <form id="paymentFormBkash">
+                <form id="paymentFormBkash" autocomplete="off">
                   <div class="text-center mb-4">
                     <img src="images/bKash-App-Logo-.webp" alt="bKash" style="height: 40px; object-fit: contain;">
                   </div>
                   <div class="mb-3">
                     <label class="form-label font-inter small fw-bold">bKash Account Number</label>
-                    <input type="tel" class="form-control custom-select shadow-sm font-inter" placeholder="01XXXXXXXXX" required pattern="01[0-9]{9}">
+                    <input type="tel" class="form-control custom-select shadow-sm font-inter" placeholder="01XXXXXXXXX" required pattern="01[0-9]{9}" autocomplete="off">
                   </div>
                   <div class="mb-3">
                     <label class="form-label font-inter small fw-bold">PIN</label>
-                    <input type="password" class="form-control custom-select shadow-sm font-inter" placeholder="Enter PIN" required>
+                    <input type="password" class="form-control custom-select shadow-sm font-inter" placeholder="Enter PIN" required autocomplete="new-password">
                   </div>
                   <button type="submit" class="btn payment-submit-btn text-white w-100 font-raleway fw-bold py-3 mt-2 rounded-8 hover-lift shadow-sm" style="background-color: #E2136E;">Pay with bKash</button>
                 </form>
               </div>
 
               <div class="tab-pane fade" id="pills-nagad" role="tabpanel">
-                <form id="paymentFormNagad">
+                <form id="paymentFormNagad" autocomplete="off">
                   <div class="text-center mb-4">
                     <img src="images/nagad-1.webp" alt="Nagad" style="height: 50px; object-fit: contain;">
                   </div>
                   <div class="mb-3">
                     <label class="form-label font-inter small fw-bold">Nagad Account Number</label>
-                    <input type="tel" class="form-control custom-select shadow-sm font-inter" placeholder="01XXXXXXXXX" required pattern="01[0-9]{9}">
+                    <input type="tel" class="form-control custom-select shadow-sm font-inter" placeholder="01XXXXXXXXX" required pattern="01[0-9]{9}" autocomplete="off">
                   </div>
                   <div class="mb-3">
                     <label class="form-label font-inter small fw-bold">PIN</label>
-                    <input type="password" class="form-control custom-select shadow-sm font-inter" placeholder="Enter PIN" required>
+                    <input type="password" class="form-control custom-select shadow-sm font-inter" placeholder="Enter PIN" required autocomplete="new-password">
                   </div>
                   <button type="submit" class="btn payment-submit-btn text-white w-100 font-raleway fw-bold py-3 mt-2 rounded-8 hover-lift shadow-sm" style="background-color: #F37021;">Pay with Nagad</button>
                 </form>
@@ -933,7 +937,6 @@
             </p>
             <div class="d-flex justify-content-center gap-3 flex-wrap">
               <button type="button" id="viewTicketBtn" class="btn btn-outline-success rounded-pill px-4 py-2 fs-6 modal-btn shadow-sm hover-lift">View Ticket History</button>
-              
               <button type="button" id="downloadPdfBtn" class="btn bg-primary-green text-white rounded-pill px-4 py-2 fs-6 modal-btn shadow-sm hover-lift">Download PDF Ticket</button>
             </div>
           </div>

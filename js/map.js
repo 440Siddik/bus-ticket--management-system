@@ -64,8 +64,31 @@ window.updateRoute = async function(startLocation, endLocation) {
                 map.removeControl(routingControl);
             }
 
+            // ==========================================
+            // FIX: THE MATHEMATICAL FALLBACK ENGINE
+            // If the OSRM Public Server fails, times out, or rate limits,
+            // this math guarantees the UI never hangs on "Calculating..."
+            // ==========================================
+            const distanceEl = document.getElementById("display-distance");
+            const durationEl = document.getElementById("display-duration");
+            
+            const directDistKm = map.distance(startCoord, endCoord) / 1000;
+            const approxRoadKm = directDistKm * 1.3; // Multiply by 1.3 to account for road curves
+            const approxTimeHrs = approxRoadKm / 40; // 40 km/h average bus speed in BD
+
+            if (distanceEl) distanceEl.innerText = approxRoadKm.toFixed(1) + " (Est.)";
+            if (durationEl) {
+                const hrs = Math.floor(approxTimeHrs);
+                const mins = Math.round((approxTimeHrs - hrs) * 60);
+                durationEl.innerText = hrs > 0 ? `${hrs}h ${mins}m (Est.)` : `${mins}m (Est.)`;
+            }
+
+            // Attempt Live Real-World Routing
             routingControl = L.Routing.control({
                 waypoints: [startCoord, endCoord],
+                router: L.Routing.osrmv1({
+                    serviceUrl: 'https://router.project-osrm.org/route/v1'
+                }),
                 routeWhileDragging: false,
                 addWaypoints: false,
                 showAlternatives: true,
@@ -100,21 +123,32 @@ window.updateRoute = async function(startLocation, endLocation) {
             routingControl.on('routesfound', function(e) {
                 const summary = e.routes[0].summary;
                 
-                const distanceEl = document.getElementById("display-distance");
+                // If successful, overwrite the fallback math with real-world data
                 if (distanceEl) distanceEl.innerText = (summary.totalDistance / 1000).toFixed(1);
-                
-                const durationEl = document.getElementById("display-duration");
                 if (durationEl) {
                     const hrs = Math.floor(summary.totalTime / 3600);
                     const mins = Math.round((summary.totalTime % 3600) / 60);
                     durationEl.innerText = hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`;
                 }
             });
+
+            routingControl.on('routingerror', function(e) {
+                console.warn("OSRM Public Routing API limit reached. Defaulting to Haversine Mathematical Fallback.");
+            });
             
             const group = new L.featureGroup([L.marker(startCoord), L.marker(endCoord)]);
             map.fitBounds(group.getBounds(), {padding: [50, 50]});
+        } else {
+             const distanceEl = document.getElementById("display-distance");
+             const durationEl = document.getElementById("display-duration");
+             if (distanceEl) distanceEl.innerText = "N/A";
+             if (durationEl) durationEl.innerText = "N/A";
         }
     } catch (error) {
         console.error("Routing error:", error);
+        const distanceEl = document.getElementById("display-distance");
+        const durationEl = document.getElementById("display-duration");
+        if (distanceEl) distanceEl.innerText = "N/A";
+        if (durationEl) durationEl.innerText = "N/A";
     }
 }
