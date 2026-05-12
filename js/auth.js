@@ -16,7 +16,8 @@ let isLoginMode = false; // Starts on Register mode
 window.isUserLoggedIn = false; 
 
 const authForm = document.getElementById("authForm");
-const authNameContainer = document.getElementById("authNameContainer"); // Targeted the new container
+const authNameContainer = document.getElementById("authNameContainer"); 
+// Targeted the new container
 const authName = document.getElementById("authName"); 
 const authEmail = document.getElementById("authEmail");
 const authPassword = document.getElementById("authPassword");

@@ -1,6 +1,4 @@
-// ==========================================
-// 1. DATA & STATE (The "Brain")
-// ==========================================
+// 1. DATA & STATE 
 const API = {
     divisions: {
         Dhaka: ["Dhaka", "Faridpur", "Gazipur", "Kishoreganj", "Madaripur", "Manikganj", "Munshiganj", "Narayanganj", "Narsingdi", "Rajbari", "Shariatpur", "Tangail"],
@@ -188,11 +186,19 @@ function filterAvailableTimes() {
     }
 }
 
+// INTELLIGENT DISTRICT FILTER 
 function handleLocationChange(divEl, distEl) {
     const dists = API.divisions[divEl.value] || [];
     distEl.innerHTML = `<option value="" selected disabled>Select District...</option>`;
-    dists.sort().forEach(d => distEl.innerHTML += `<option value="${d}">${d}</option>`);
-    distEl.disabled = dists.length === 0;
+    
+    dists.sort().forEach(d => {
+        // Prevent user from selecting the exact same District as Division (e.g. Dhaka -> Dhaka)
+        if (d !== divEl.value) {
+            distEl.innerHTML += `<option value="${d}">${d}</option>`;
+        }
+    });
+    
+    distEl.disabled = dists.length === 0 || distEl.options.length === 1;
     validateJourney();
 }
 
@@ -406,9 +412,8 @@ window.showToast = function(msg, isError = false) {
     new bootstrap.Toast(toastEl).show();
 }
 
-// ==========================================
-// 4. EVENT LISTENERS
-// ==========================================
+// 4. EVENT LISTENERS & CHECKOUT
+
 if(els.origDiv) {
     els.origDiv.addEventListener("change", () => handleLocationChange(els.origDiv, els.origDist));
     els.destDiv.addEventListener("change", () => handleLocationChange(els.destDiv, els.destDist));
@@ -487,9 +492,7 @@ function finalizeBooking() {
 
     const seatsToBook = [...state.selectedSeats];
 
-    // Nuke Local Cart BEFORE talking to DB to prevent the "Ghost Green" race condition
     state.selectedSeats = [];
-    
     state.bookingHistory.unshift(newTicket);
 
     if (dbSeatsRef && seatsToBook.length > 0) {
@@ -526,7 +529,94 @@ function finalizeBooking() {
     }, 500);
 }
 
-// TICKET HISTORY TABS
+// INJECTED GLOBAL PDF DOWNLOAD API 
+window.downloadTicketPDF = function(index) {
+    if (!window.jspdf) {
+        window.showToast("PDF Engine failed to load. Please check your connection.", true);
+        return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    if (state.bookingHistory.length === 0 || !state.bookingHistory[index]) return;
+    const ticketInfo = state.bookingHistory[index];
+
+    const amountPerTicket = (ticketInfo.total / ticketInfo.seats.length).toFixed(2);
+    
+    ticketInfo.seats.forEach((seatNum, i) => {
+        if (i > 0) doc.addPage();
+        
+        doc.setDrawColor(0, 0, 0);
+        doc.setLineWidth(0.5);
+        doc.setLineDashPattern([3, 3], 0);
+        doc.rect(20, 30, 170, 200);
+
+        doc.setLineDashPattern([], 0);
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(28);
+        doc.setTextColor(200, 200, 200); 
+        doc.text("NEXTRIP DIGITAL TICKET", 105, 55, null, null, "center");
+
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(14);
+        
+        doc.setFont("helvetica", "bold");
+        doc.text("Passenger:", 35, 90);
+        doc.setFont("helvetica", "normal");
+        doc.text(ticketInfo.name, 80, 90);
+
+        doc.setDrawColor(220, 220, 220);
+        doc.line(35, 95, 175, 95);
+
+        doc.setFont("helvetica", "bold");
+        doc.text("Phone:", 35, 105);
+        doc.setFont("helvetica", "normal");
+        doc.text(ticketInfo.phone, 80, 105);
+        
+        doc.line(35, 110, 175, 110);
+
+        doc.setFont("helvetica", "bold");
+        doc.text("Route:", 35, 120);
+        doc.setFont("helvetica", "normal");
+        doc.text(ticketInfo.route, 80, 120);
+
+        doc.line(35, 125, 175, 125);
+
+        doc.setFont("helvetica", "bold");
+        doc.text("Date & Time:", 35, 135);
+        doc.setFont("helvetica", "normal");
+        doc.text(`${ticketInfo.date} at ${ticketInfo.time}`, 80, 135);
+
+        doc.line(35, 140, 175, 140);
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(30);
+        doc.setTextColor(150, 150, 150);
+        doc.text(`Seat: ${seatNum}`, 105, 170, null, null, "center");
+
+        doc.setFontSize(20);
+        doc.setTextColor(29, 209, 0); 
+        doc.text(`Amount Paid: BDT ${amountPerTicket}`, 105, 195, null, null, "center");
+
+        doc.setFontSize(10);
+        doc.setTextColor(0, 0, 0);
+        doc.text(`Ticket ${i + 1} of ${ticketInfo.seats.length} - Scan code upon boarding`, 105, 220, null, null, "center");
+    });
+
+    doc.save(`NexTrip_Tickets_${ticketInfo.name.replace(/\s+/g, '_')}.pdf`);
+    window.showToast("PDF Tickets downloaded securely!", false);
+};
+
+// Global click event for the Success Modal's Download button (Downloads the absolute latest)
+const downloadPdfBtn = $("downloadPdfBtn");
+if (downloadPdfBtn) {
+    downloadPdfBtn.addEventListener("click", () => {
+        window.downloadTicketPDF(0); 
+    });
+}
+
 function renderTicketHistory() {
     $("cart-empty-state").classList.add("d-none");
     $("cart-filled-state").classList.add("d-none");
@@ -539,7 +629,7 @@ function renderTicketHistory() {
     const latestTicket = state.bookingHistory[0];
     const pastTickets = state.bookingHistory.slice(1);
 
-    function buildCard(ticket, ticketNum, isLatest) {
+    function buildCard(ticket, ticketNum, isLatest, historyIndex) {
         const badge = isLatest ? `<span class="badge bg-primary-green ms-2">New</span>` : `<span class="badge bg-secondary ms-2">Archived</span>`;
         return `
         <div class="ticket-invoice-card border border-dashed border-2 ${isLatest ? 'border-success' : 'border-secondary'} border-opacity-25 rounded-12 p-4 bg-light-gray position-relative overflow-hidden shadow-sm mb-4">
@@ -587,8 +677,10 @@ function renderTicketHistory() {
               <p class="font-inter fw-bold text-dark-main m-0">BDT <span>${ticket.total}</span></p>
             </div>
           </div>
-          <div class="text-center mt-3 pt-3 border-top border-dashed">
-             <p class="small text-muted mb-0" style="font-size:10px;">Purchased on: ${ticket.timestamp}</p>
+          
+          <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top border-dashed">
+             <p class="small text-muted mb-0" style="font-size:10px;">Purchased on:<br/>${ticket.timestamp}</p>
+             <button type="button" class="btn btn-sm bg-primary-green text-white rounded-pill px-3 shadow-sm hover-lift" onclick="downloadTicketPDF(${historyIndex})">Download PDF</button>
           </div>
         </div>`;
     }
@@ -598,7 +690,8 @@ function renderTicketHistory() {
         pastTicketsHtml = `<p class="text-center text-muted small mt-4">No past bookings found.</p>`;
     } else {
         pastTickets.forEach((ticket, index) => {
-            pastTicketsHtml += buildCard(ticket, state.bookingHistory.length - 1 - index, false);
+            // Index + 1 because index 0 in this loop is actually index 1 in the main bookingHistory array
+            pastTicketsHtml += buildCard(ticket, state.bookingHistory.length - 1 - index, false, index + 1);
         });
     }
 
@@ -623,103 +716,13 @@ function renderTicketHistory() {
 
         <div class="tab-content">
           <div class="tab-pane fade show active" id="tab-latest" role="tabpanel">
-             ${buildCard(latestTicket, state.bookingHistory.length, true)}
+             ${buildCard(latestTicket, state.bookingHistory.length, true, 0)}
           </div>
           <div class="tab-pane fade" id="tab-past" role="tabpanel">
              ${pastTicketsHtml}
           </div>
         </div>
     `;
-}
-
-// === FIX: PURE MULTI-PAGE OFFLINE NATIVE PDF ENGINE ===
-const downloadPdfBtn = $("downloadPdfBtn");
-if (downloadPdfBtn) {
-    downloadPdfBtn.addEventListener("click", () => {
-        if (!window.jspdf) {
-            window.showToast("PDF Engine failed to load. Please check your connection.", true);
-            return;
-        }
-
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        
-        if (state.bookingHistory.length === 0) return;
-        const ticketInfo = state.bookingHistory[0];
-
-        const amountPerTicket = (ticketInfo.total / ticketInfo.seats.length).toFixed(2);
-        
-        ticketInfo.seats.forEach((seatNum, index) => {
-            if (index > 0) doc.addPage();
-            
-            // Outer dashed border
-            doc.setDrawColor(0, 0, 0);
-            doc.setLineWidth(0.5);
-            doc.setLineDashPattern([3, 3], 0);
-            doc.rect(20, 30, 170, 200);
-
-            doc.setLineDashPattern([], 0); // Reset dash
-
-            // Title
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(28);
-            doc.setTextColor(200, 200, 200); 
-            doc.text("NEXTRIP DIGITAL TICKET", 105, 55, null, null, "center");
-
-            // Details
-            doc.setTextColor(0, 0, 0);
-            doc.setFontSize(14);
-            
-            doc.setFont("helvetica", "bold");
-            doc.text("Passenger:", 35, 90);
-            doc.setFont("helvetica", "normal");
-            doc.text(ticketInfo.name, 80, 90);
-
-            doc.setDrawColor(220, 220, 220);
-            doc.line(35, 95, 175, 95);
-
-            doc.setFont("helvetica", "bold");
-            doc.text("Phone:", 35, 105);
-            doc.setFont("helvetica", "normal");
-            doc.text(ticketInfo.phone, 80, 105);
-            
-            doc.line(35, 110, 175, 110);
-
-            doc.setFont("helvetica", "bold");
-            doc.text("Route:", 35, 120);
-            doc.setFont("helvetica", "normal");
-            doc.text(ticketInfo.route, 80, 120);
-
-            doc.line(35, 125, 175, 125);
-
-            doc.setFont("helvetica", "bold");
-            doc.text("Date & Time:", 35, 135);
-            doc.setFont("helvetica", "normal");
-            doc.text(`${ticketInfo.date} at ${ticketInfo.time}`, 80, 135);
-
-            doc.line(35, 140, 175, 140);
-
-            // Seat Number Output
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(30);
-            doc.setTextColor(150, 150, 150);
-            doc.text(`Seat: ${seatNum}`, 105, 170, null, null, "center");
-
-            // Amount Paid
-            doc.setFontSize(20);
-            doc.setTextColor(29, 209, 0); 
-            doc.text(`Amount Paid: BDT ${amountPerTicket}`, 105, 195, null, null, "center");
-
-            // Footer Note
-            doc.setFontSize(10);
-            doc.setTextColor(0, 0, 0);
-            doc.text(`Ticket ${index + 1} of ${ticketInfo.seats.length} - Scan code upon boarding`, 105, 220, null, null, "center");
-        });
-
-        // Natively prompts physical download of PDF
-        doc.save(`NexTrip_Tickets_${ticketInfo.name.replace(/\s+/g, '_')}.pdf`);
-        window.showToast("PDF Tickets downloaded securely!", false);
-    });
 }
 
 const viewTicketBtn = $("viewTicketBtn");
@@ -757,10 +760,15 @@ window.addEventListener("userLoggedOut", () => {
     $("nav-cart-badge").classList.add("d-none");
 });
 
+// SMART SEARCH ENGINE CONSTRAINT 
 const searchIndex = [];
 for (const [div, dists] of Object.entries(API.divisions)) {
     searchIndex.push({ name: div, type: "Division", parent: div });
-    dists.forEach(dist => searchIndex.push({ name: dist, type: "District", parent: div }));
+    dists.forEach(dist => {
+        if (dist !== div) { 
+            searchIndex.push({ name: dist, type: "District", parent: div });
+        }
+    });
 }
 
 if(els.searchInput) {
@@ -792,7 +800,11 @@ if(els.searchInput) {
                 bootstrap.Modal.getInstance($("searchModal"))?.hide();
                 els.origDiv.value = loc.parent;
                 handleLocationChange(els.origDiv, els.origDist);
-                els.origDist.value = loc.name;
+                if (loc.type === "District") {
+                    els.origDist.value = loc.name;
+                } else {
+                    els.origDist.value = "";
+                }
                 validateJourney();
                 $("paribahan-are").scrollIntoView({ behavior: "smooth", block: "start" });
                 els.searchInput.value = "";
